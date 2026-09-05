@@ -1,0 +1,25 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# macOS
+.DS_Store
+
+# Generated model output (regenerate with OpenSCAD via hardware/gen.py +
+# export_assembly.py; the .scad + dimensions.json are the source of truth).
+hardware/stl/
+hardware/export/
+docs/assembly-3d.html
+
+# Third-party reference material, not mine to redistribute. Re-fetch from the
+# sources listed in docs/RESEARCH.md and scans/README.md. (docs/oi_spec.txt is
+# kept: iRobot publishes the Open Interface spec openly and RESEARCH.md cites it.)
+hardware/vendor-cad/
+hardware/mesh/
+docs/*.pdf
+docs/drawings/
+docs/realsense_d400.txt
+docs/xavier_nx_carrier.txt

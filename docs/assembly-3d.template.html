@@ -1,0 +1,993 @@
+<meta charset="utf-8">
+<title>Roomba NX Assembly</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#F4F6F7; --surface:#FFFFFF; --surface2:#EDF0F2;
+    --ink:#14181C; --body:#333B43; --muted:#5F6C77; --line:#D8DEE3;
+    --power:#B05510; --data:#0B6E86; --ok:#186B3C;
+    --power-fill:#F6E4D2; --data-fill:#D8ECF2;
+    --scene-bg:#EEF1F3; --grid-a:#C9D0D6; --grid-b:#DFE4E8;
+    --display:"IBM Plex Sans Condensed","Helvetica Neue",Arial,sans-serif;
+    --sans:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0E1114; --surface:#161A1E; --surface2:#1D2329;
+      --ink:#E9EDEF; --body:#C2CBD2; --muted:#8B98A3; --line:#293138;
+      --power:#E9A055; --data:#4FC2DA; --ok:#5BC98A;
+      --power-fill:#2E2016; --data-fill:#122C34;
+      --scene-bg:#111519; --grid-a:#2A3239; --grid-b:#1C2228;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E1114; --surface:#161A1E; --surface2:#1D2329;
+    --ink:#E9EDEF; --body:#C2CBD2; --muted:#8B98A3; --line:#293138;
+    --power:#E9A055; --data:#4FC2DA; --ok:#5BC98A;
+    --power-fill:#2E2016; --data-fill:#122C34;
+    --scene-bg:#111519; --grid-a:#2A3239; --grid-b:#1C2228;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--body);font-family:var(--sans);font-size:13.5px;
+       line-height:1.5;overflow:hidden;-webkit-user-select:none;user-select:none}
+  #app{display:grid;grid-template-columns:320px 1fr;height:100vh}
+  @media (max-width:760px){#app{grid-template-columns:1fr;grid-template-rows:1fr 42vh}
+    #panel{order:2;border-right:none;border-top:1px solid var(--line)}}
+
+  /* ---------- side panel ---------- */
+  #panel{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;
+         min-height:0}
+  .hd{padding:18px 18px 12px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  h1{font-family:var(--display);font-weight:700;font-size:24px;line-height:1.05;color:var(--ink);
+     margin:6px 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:12.5px;margin:0}
+  .ctl{padding:12px 18px;border-bottom:1px solid var(--line)}
+  .ctl label{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);
+             font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .ctl label b{color:var(--ink);font-weight:500;letter-spacing:0;text-transform:none;font-size:12px}
+  .ctl label.chk{justify-content:flex-start;gap:8px;align-items:center;margin:14px 0 0;cursor:pointer;color:var(--ink)}
+  .ctl label.chk input{margin:0;accent-color:var(--power)}
+  input[type=range]{width:100%;accent-color:var(--power)}
+  .views{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  button{font:inherit;font-size:12px;background:var(--surface2);color:var(--ink);border:1px solid var(--line);
+         border-radius:4px;padding:5px 10px;cursor:pointer}
+  button:hover{border-color:var(--muted)} button:focus-visible{outline:2px solid var(--data);outline-offset:1px}
+  button.on{background:var(--power-fill);border-color:var(--power);color:var(--power)}
+
+  #list{flex:1;overflow:auto;min-height:0;padding:6px 0 14px}
+  .grp{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+       padding:12px 18px 4px;display:flex;justify-content:space-between}
+  .grp button{font-size:10.5px;padding:1px 7px}
+  .row{display:grid;grid-template-columns:18px 1fr auto;gap:10px;align-items:center;padding:6px 18px;cursor:pointer}
+  .row:hover{background:var(--surface2)}
+  .row.sel{background:var(--power-fill)}
+  .row input{margin:0;accent-color:var(--power)}
+  .row .n{color:var(--ink);font-weight:500;font-size:13px}
+  .row .d{font-family:var(--mono);font-size:10.5px;color:var(--muted);white-space:nowrap}
+  .sw{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:7px;vertical-align:-1px;
+      border:1px solid rgba(0,0,0,.15)}
+  .ft{padding:10px 18px;border-top:1px solid var(--line);font-family:var(--mono);font-size:10.5px;color:var(--muted);
+      display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .ft b{color:var(--ink);font-weight:500}
+
+  /* ---------- scene ---------- */
+  #stage{position:relative;min-width:0;min-height:0;background:var(--scene-bg)}
+  canvas{display:block;width:100%;height:100%;outline:none}
+  #hint{position:absolute;left:14px;bottom:12px;font-family:var(--mono);font-size:10.5px;color:var(--muted);
+        background:color-mix(in srgb,var(--surface) 80%,transparent);padding:5px 9px;border-radius:4px;
+        border:1px solid var(--line);pointer-events:none}
+  #sel{position:absolute;right:14px;top:12px;max-width:300px;background:var(--surface);border:1px solid var(--line);
+       border-radius:6px;padding:10px 13px;display:none}
+  #sel.on{display:block}
+  #sel .t{font-family:var(--display);font-size:16px;color:var(--ink);font-weight:600;margin:0 0 2px}
+  #sel .m{font-family:var(--mono);font-size:11px;color:var(--muted);margin:0}
+  #sel p{margin:6px 0 0;font-size:12.5px}
+  #err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:30px;text-align:center;
+       color:var(--body)}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div id="app">
+  <aside id="panel">
+    <div class="hd">
+      <div class="eyebrow">Build sheet companion</div>
+      <h1>Roomba NX Assembly</h1>
+      <p class="sub">Printed parts are the exact STLs that go to the printer. The Jetson and the camera are vendor CAD. Everything else is a datasheet envelope. Three carriers at 0°, 90° and 180°; the rear deck carries nothing, so the dust bin still slides out.</p>
+    </div>
+    <div class="ctl">
+      <label>Explode <b id="exv">0 mm</b></label>
+      <input type="range" id="explode" min="0" max="80" step="1" value="0" aria-label="Explode distance">
+      <label style="margin-top:12px">Camera tilt <b id="tiltv">−8°</b></label>
+      <input type="range" id="tilt" min="-25" max="15" step="1" value="-8" aria-label="Camera tilt">
+      <label class="chk"><input type="checkbox" id="chk-harness" checked> Cable harness</label>
+      <div class="views">
+        <button data-view="iso" class="on">Iso</button>
+        <button data-view="top">Top</button>
+        <button data-view="front">Front</button>
+        <button data-view="side">Side</button>
+        <button data-view="under">Underside</button>
+      </div>
+    </div>
+    <div id="list" role="list"></div>
+    <div class="ft">
+      <span>payload <b id="mass">—</b></span>
+      <span>bought parts <b id="nb">—</b> · printed <b id="np">—</b></span>
+    </div>
+  </aside>
+  <div id="stage">
+    <canvas id="c" tabindex="0" aria-label="3D view of the Roomba assembly"></canvas>
+    <div id="hint">drag · orbit &nbsp;|&nbsp; shift-drag · pan &nbsp;|&nbsp; wheel · zoom &nbsp;|&nbsp; click · select</div>
+    <div id="sel"><p class="t"></p><p class="m"></p><p class="b"></p></div>
+    <div id="err"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+const D = /*__DIMS__*/;
+const MESH = /*__MESHES__*/;   // exported STLs: base64 float32 triangle soup, keyed by part
+
+// ------------------------------------------------------------ derived, mirroring roomba_nx.scad
+const R   = D.roomba_690.diameter / 2, H = D.roomba_690.height, Z0 = D.layout.chassis_clearance;
+const DECK = D.roomba_690.deck_height;    // the flat top the frame bolts to; 92.25 is only the front IR boss
+const F   = D.frame, L = D.layout, P = D.print;
+const PT  = F.carrier.plate_t, PZ = DECK + PT;              // top of any carrier plate
+const CRAD_X = F.battery.r0 + F.battery.outer[0]/2;         // 88: outboard centre of the cradle
+const PACK_TOP = DECK + F.battery.floor + D.ovonic_3s_8000.design_h;
+const LID_TOP = PACK_TOP + F.battery.lid_t;                 // the BMS and the INA219 sit on this face
+const PIV_X = F.camera.pivot_y, PIV_Z = F.camera.pivot_z;   // carrier-local: outboard, and above the deck
+const DOCK_Y = R - D.home_base.ramp_d + 10;
+const RAMP_ANG = Math.atan2(D.home_base.ramp_h, D.home_base.ramp_d), CASTER_Y = D.roomba_690.caster_position[1];
+const DOCK_PITCH = Math.asin(((CASTER_Y - DOCK_Y)/D.home_base.ramp_d*D.home_base.ramp_h)/CASTER_Y);   // nose-up on the ramp
+
+// ------------------------------------------------------------ scene
+if (!window.THREE) { document.getElementById('err').style.display='flex';
+  document.getElementById('err').textContent='three.js failed to load.'; throw new Error('no THREE'); }
+let needs = true; function dirty(){ needs = true; }   // declared first: setTilt() runs before the render section
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:false, preserveDrawingBuffer:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+const scene = new THREE.Scene();
+const cam = new THREE.PerspectiveCamera(38, 1, 5, 6000);
+cam.up.set(0, 0, 1);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a9096, 0.85));
+const sun = new THREE.DirectionalLight(0xffffff, 0.75); sun.position.set(300, -400, 700); scene.add(sun);
+const fill = new THREE.DirectionalLight(0xffffff, 0.25); fill.position.set(-400, 300, 200); scene.add(fill);
+
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let grid;
+function applyTheme(){
+  scene.background = new THREE.Color(cssv('--scene-bg'));
+  if (grid) scene.remove(grid);
+  grid = new THREE.GridHelper(1200, 24, new THREE.Color(cssv('--grid-a')), new THREE.Color(cssv('--grid-b')));
+  grid.rotation.x = Math.PI/2; grid.position.z = -0.5; scene.add(grid); dirty();
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+
+// ------------------------------------------------------------ materials
+const PRINT = 0xE9A055, PRINT2 = 0xF0B06A;
+const mat = (color, o={}) => new THREE.MeshStandardMaterial(Object.assign({color, roughness:.62, metalness:.05}, o));
+const M = {
+  print:  mat(PRINT), print2: mat(PRINT2),
+  roomba: mat(0xC4CACF, {transparent:true, opacity:.55}), bumper: mat(0x8A9096), button: mat(0xEDEDED),
+  wheel:  mat(0x222222), pcb: mat(0x1E6B3A), module: mat(0x2A2E33), fan: mat(0x111111),
+  lipo:   mat(0x2C5BB5), cam: mat(0xD9DBDD, {roughness:.35}), lens: mat(0x111111, {roughness:.2, metalness:.3}),
+  drok:   mat(0x3A3F45), ina: mat(0x6A2FB5), dock: mat(0x4A4F55), copper: mat(0xC8A24A, {metalness:.6, roughness:.35}),
+  pin:    mat(0xD4B400, {metalness:.7, roughness:.3}), slot: mat(0x8C5A2A),
+  // harness: silicone hook-up wire is semi-gloss, so it reads as a separate family from the matte boards
+  wpos:   mat(0xC0392B, {roughness:.40}), wneg: mat(0x23272B, {roughness:.40}),   // power +/-
+  wdata:  mat(0x1490A8, {roughness:.40}), wdata2: mat(0x63C2D4, {roughness:.40}), // I2C data / clock
+  wusb:   mat(0x2B3A40, {roughness:.50}),                                          // USB jacket
+  wbal0:  mat(0x3A4046, {roughness:.40}), wbal1: mat(0xE8B44C, {roughness:.40}),   // balance: light multi
+  wbal2:  mat(0x8FCB6B, {roughness:.40}), wbal3: mat(0xB98FE0, {roughness:.40}),
+  diode:  mat(0x111417, {roughness:.35, metalness:.25}),
+  fuse:   mat(0xD8C79E, {roughness:.20, transparent:true, opacity:.8}),
+  swbody: mat(0x1B1E22, {roughness:.5}),
+};
+
+// ------------------------------------------------------------ geometry helpers (SCAD semantics: z-up, corner origin)
+function box(size, pos, m, parent){            // size [w,d,h], pos = min corner
+  const g = new THREE.Mesh(new THREE.BoxGeometry(size[0], size[1], size[2]), m);
+  g.position.set(pos[0] + size[0]/2, pos[1] + size[1]/2, pos[2] + size[2]/2); parent.add(g); return g;
+}
+const boxc = (size, pos, m, parent) => box(size, [pos[0]-size[0]/2, pos[1]-size[1]/2, pos[2]], m, parent);
+function cylz(r, h, pos, m, parent, seg=64){    // z-axis cylinder, base at pos.z
+  const g = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), m);
+  g.rotation.x = Math.PI/2; g.position.set(pos[0], pos[1], pos[2] + h/2); parent.add(g); return g;
+}
+const GEO = {};
+const b64 = s => { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
+function stl(name, m, parent, pos=[0,0,0], rot=[0,0,0]){   // the exported STL, in the part-local frame roomba_nx.scad uses
+  if (!GEO[name]) {
+    const d = MESH[name], q = new Uint16Array(b64(d.p).buffer), n = q.length / 3;
+    const P = new Float32Array(q.length);
+    for (let i = 0; i < n; i++) {
+      P[i*3]   = d.o[0] + q[i*3]   / 65535 * d.s[0];
+      P[i*3+1] = d.o[1] + q[i*3+1] / 65535 * d.s[1];
+      P[i*3+2] = d.o[2] + q[i*3+2] / 65535 * d.s[2];
+    }
+    const ib = b64(d.i);
+    let g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(P, 3));
+    g.setIndex(new THREE.BufferAttribute(d.w ? new Uint32Array(ib.buffer) : new Uint16Array(ib.buffer), 1));
+    g = g.toNonIndexed();                      // so hard edges stay flat-shaded, not averaged
+    g.computeVertexNormals();
+    GEO[name] = g;
+  }
+  const g = new THREE.Mesh(GEO[name], m); g.position.set(pos[0], pos[1], pos[2]); g.rotation.set(rot[0], rot[1], rot[2]); parent.add(g); return g;
+}
+const robot = new THREE.Group(); robot.name = 'robot'; robot.rotation.x = DOCK_PITCH; scene.add(robot);   // everything on the robot pitches with it
+const grp = (name, parent=robot) => { const g = new THREE.Group(); g.name = name; parent.add(g); return g; };
+// Every carrier STL is exported in its own frame: origin at the ROBOT centre on the DECK plane, +X
+// outboard along that carrier's axis.  So placing one is a rotation and nothing else, and everything
+// bolted to it is given in the same frame - which is also the frame ports.* quotes.
+const carrier = a => { const g = grp('carrier'+a); g.position.z = DECK; g.rotation.z = a*Math.PI/180; return g; };
+const [CJ, CF, CB] = L.carrier_angles.map(carrier);   // right: Jetson | front: camera + DROK | left: battery
+function wedge(w, d, h, m, parent){        // ramp: z=0 along y=0, rising to h at y=d, spanning x=±w/2
+  const a=[-w/2,0,0], b=[w/2,0,0], c=[w/2,d,0], e=[-w/2,d,0], f=[w/2,d,h], k=[-w/2,d,h];
+  const tri = [a,c,b, a,e,c, a,b,f, a,f,k, b,c,f, a,k,e, e,k,f, e,f,c];
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(tri.flat()), 3)); geo.computeVertexNormals();
+  const g = new THREE.Mesh(geo, m); parent.add(g); return g;
+}
+
+// ------------------------------------------------------------ parts registry (drives the list, selection, explode)
+const parts = [];
+function reg(group, meta){ group.userData = Object.assign({base: group.position.clone(), ex:[0,0,0]}, meta); parts.push(group); return group; }
+
+// ---------- reference: Roomba
+{
+  const g = grp('roomba');
+  stl('roomba_690_body', M.roomba, g);                       // Create 2 reference CAD = the 600-series shell
+  cylz(D.roomba_690.clean_button_diameter/2 - 1, 1.5, [0,0,DECK-0.5], M.button, g);
+  for (const b of D.roomba_690.screw_bosses) cylz(2.2, 1, [b[0], b[1], DECK], M.slot, g, 16);
+  reg(g, {name:'Roomba 690', kind:'ref', dims:`Ø${D.roomba_690.diameter} × ${H} mm`, mass:D.roomba_690.mass_g,
+          note:`Shell is the Create 2 reference CAD, which is the same 600-series chassis. The deck is flat at ${DECK} mm over the whole body; the ${H} mm in the spec is reached only by the ${D.roomba_690.front_ir_boss.w} × ${D.roomba_690.front_ir_boss.d} mm IR boss on the front centreline, which is the one thing the frame has to stay behind. Dots mark the eleven chassis screw bosses under the faceplate.`});
+}
+
+// ---------- printed: hub
+{
+  const h = F.hub;
+  const g = grp('hub'); g.position.z = DECK;
+  stl('hub', M.print, g);
+  reg(g, {name:'Hub', kind:'print', dims:`Ø${h.od} ring, ${h.t} mm`, ex:[0,0,1],
+          note:`A plain ring clearing the ${D.roomba_690.clean_button_diameter} mm Clean button, with three radial pads at ${L.carrier_angles.join('/')}°. Each carrier tongue lies on top of a pad and is bolted down with two M3; the nuts sit in hex pockets in the pad's underside, trapped between the hub and the Roomba's shell, so no printed thread carries the joint.`});
+}
+
+// ---------- right: Jetson plate + the dev kit
+{
+  const J = D.jetson_xavier_nx_devkit, j = F.jetson;
+  const g = grp('jplate', CJ);
+  stl('jetson_plate', M.print, g);
+  reg(g, {name:'Jetson plate', kind:'print', dims:`r ${j.r0}–${j.r1} × ${2*j.half_w} mm`, ex:[1,0,0],
+          note:`Laps onto a hub pad, then ramps down to a ${PT} mm plate lying flat on the deck — nothing is stacked on top of an arm, which is where the old design lost its height. Four tapped ${j.standoff_h} mm standoffs on the carrier's ${(J.mount_holes[1][0]-J.mount_holes[0][0]).toFixed(1)} × ${(J.mount_holes[0][1]-J.mount_holes[2][1]).toFixed(1)} mm pattern, and two chassis bosses far enough apart that the plate cannot pivot on its tongue.`});
+
+  const r = grp('jetson', CJ); r.position.set(L.jetson_center[0], 0, PT + j.standoff_h);
+  r.rotation.z = L.jetson_rotation*Math.PI/180;
+  stl('jetson_devkit_board',  M.pcb,    r);    // NVIDIA's own devkit CAD; z=0 is the carrier underside
+  stl('jetson_devkit_cooler', M.module, r);
+  reg(r, {name:'Jetson Xavier NX dev kit', kind:'ref', dims:`${J.board_w} × ${J.board_d} PCB, ${J.stack_height} mm tall`, mass:J.mass_g, ex:[1,0,1.2],
+          note:`NVIDIA's own developer kit CAD, the whole P3518 assembly: carrier, module, connectors, heatsink and fan. The ${J.board_w} mm axis runs fore-aft with the I/O edge facing INBOARD, so the barrel jack, the USB stack and the 40-pin header all present to the open deck instead of hanging over the rim. Barrel jack ${J.barrel_jack.od}×${J.barrel_jack.pin} mm, ${J.barrel_jack.v_in[0]}–${J.barrel_jack.v_in[1]} V, fed straight from the pack.`});
+}
+
+// ---------- left: battery cradle, pack, lid, and the two boards the lid carries
+{
+  const B = D.ovonic_3s_8000, b = F.battery;
+  const g = grp('cradle', CB);
+  stl('battery_cradle', M.print, g);
+  reg(g, {name:'Battery cradle', kind:'print', dims:`${b.outer[0]} × ${b.outer[1]} × ${(b.floor+b.wall_h).toFixed(1)} mm`, ex:[1,0,0],
+          note:`Cut for the ${B.design_l} × ${B.design_w} × ${B.design_h} mm hard-case envelope, not the ${B.l} × ${B.w} × ${B.h} mm soft pack, so either pack drops in — the soft one simply sits with up to ${(B.design_l-B.l).toFixed(0)} mm of end play, taken up by the straps and a foam shim. Cutting for the smaller one would have meant a reprint.`});
+
+  const r = grp('lipo', CB); r.position.set(CRAD_X, 0, b.floor); r.rotation.z = L.battery_rotation*Math.PI/180;
+  stl('lipo_3s', M.lipo, r);
+  reg(r, {name:'Ovonic 3S 8000 mAh', kind:'ref', dims:`${B.l} × ${B.w} × ${B.h} mm`, mass:B.mass_g, ex:[1,0,1.2],
+          note:`89 Wh. 10.5–12.6 V sits inside the Jetson's 9–20 V window, so no converter. Charged to 12.0 V, not 12.6, for cycle life. Drawn at Ovonic's soft-pack figures with a ${B.corner_r} mm radius — a pouch cell is a rounded brick and nothing more, so the leads are left to the harness.`});
+
+  const d = grp('lid', CB); d.position.z = PACK_TOP - DECK - b.lid_skirt;   // the STL is exported lifted on its skirt so it prints flat
+  stl('battery_lid', M.print2, d);
+  reg(d, {name:'Battery lid', kind:'print', dims:`${(b.outer[0]+2*b.lid_lip).toFixed(1)} × ${(b.outer[1]+2*b.lid_lip).toFixed(1)} × ${b.lid_t} mm`, ex:[1,0,2.2],
+          note:`Lies on the pack, located by end skirts capping the cradle walls and clamped by the same two straps. The ${b.wall_h} mm walls are the full pack height, so the lid bears on the walls and not on the cells. Carrying the BMS and the INA219 up here puts both boards, the T-plug and all four balance leads within about 40 mm of the cells they protect.`});
+
+  const bd = grp('bms', CB); bd.position.set(CRAD_X, b.bms_center_y, LID_TOP - DECK);
+  stl('bms', M.pcb, bd);
+  reg(bd, {name:'3S BMS', kind:'ref', dims:`${D.bms_daier_3s.l} × ${D.bms_daier_3s.w} × ${D.bms_daier_3s.t} mm`, mass:D.bms_daier_3s.mass_g, ex:[1,0,3],
+          note:`HX-3S-FL25A, zip-tied to the lid directly over the cells. This SKU has no JST-XH header: the balance taps are four solder pads, B−, B1, B2 and B+, whose positions were measured off the vendor drawing. Load and charge both hang on P+/P− — the over-discharge cutoff only opens that port.`});
+
+  const ia = grp('ina', CB); ia.position.set(CRAD_X, b.ina_center_y, LID_TOP - DECK);
+  stl('ina219', M.ina, ia);
+  reg(ia, {name:'INA219', kind:'ref', dims:`${D.ina219_hiletgo.l} × ${D.ina219_hiletgo.w} × ${D.ina219_hiletgo.t} mm`, mass:D.ina219_hiletgo.mass_g, ex:[1,0,3],
+          note:`Pack voltage and current over I2C to the Jetson. High-side shunt on the BMS's P+ rail, so the whole load current goes through it. Drives the 11.0 V warning and the 10.5 V shutdown.`});
+}
+
+// ---------- front: plate, DROK, and the camera on its rocker
+let camPivot;
+{
+  const f = F.front, C = F.camera, K = D.realsense_d435i;
+  const g = grp('fplate', CF);
+  stl('front_plate', M.print, g);
+  reg(g, {name:'Front plate', kind:'print', dims:`r ${f.r0}–${f.r1} × ${2*f.half_w} mm`, ex:[1,0,0],
+          note:`DROK at the inboard end, integral camera cheeks at the outboard end. It stops at r ${f.r1}, 3 mm short of the front IR boss, and nothing standing on it reaches in front of that boss. The cheeks are part of the plate, so the camera has no separate bracket to loosen.`});
+
+  const r = grp('drok', CF); r.position.set(f.drok_center_y, 0, PT); r.rotation.z = L.drok_rotation*Math.PI/180;
+  stl('drok', M.drok, r);
+  reg(r, {name:'DROK buck (charger)', kind:'ref', dims:`${D.drok_buck.l} × ${D.drok_buck.w} × ${D.drok_buck.h} mm`, mass:D.drok_buck.mass_g, ex:[1,0,1.2],
+          note:`CC/CV, set to 12.0 V / 2.0 A at the pack terminals. Ships preset to ~20 V — wind it down first. Zip-tied through the front plate at the inboard end, next to the grommet the dock-pad pair comes up through.`});
+
+  camPivot = grp('camPivot', CF); camPivot.position.set(PIV_X, 0, PIV_Z);
+  camPivot.userData = {base: camPivot.position.clone(), ex:[1,0,1.2]};
+  const h = grp('rocker', camPivot); h.position.z = -(K.h/2 + C.rocker[2]);   // the STL is exported lifted so it prints flat
+  stl('camera_rocker', M.print2, h);
+  reg(h, {name:'Camera rocker', kind:'print', dims:`${C.rocker[0]} × ${C.rocker[1]} × ${C.rocker[2]} mm cradle`, ex:[0,0,0], pivotChild:true,
+          note:`A friction clamp, not a mast. The pivot runs THROUGH the D435i's optical centre, so tilting aims the camera without moving it, and the ${K.h} mm body is the only thing above the pivot — which is why the whole bracket is ${C.cheek_top} mm tall instead of 89. The clamp bolt sweeping ${C.tilt_min}° to +${C.tilt_max}° is what cuts the arc slot in the cheeks.`});
+
+  const c = grp('camera', camPivot); c.rotation.z = -Math.PI/2;
+  stl('realsense_d435i', M.cam, c);          // Intel's own mesh, re-oriented: optics face +Y
+  reg(c, {name:'RealSense D435i', kind:'ref', dims:`${K.w} × ${K.d} × ${K.h} mm`, mass:K.mass_g, ex:[0,0,0], pivotChild:true,
+          note:`Optical centre at exactly ${(DECK + PIV_Z).toFixed(0)} mm, which is derived and not chosen: it is the lowest the camera can sit before the robot's own front IR boss starts eating its near field. The grazing ray over that boss is a 172 mm slant, still inside the D435i's own 175–195 mm Min-Z, so the boss costs no usable depth. Geometry is Intel's own model from the RealSense ROS package, measured at ${K.w} × ${K.d} × ${K.h} mm against the datasheet.`});
+}
+
+// ---------- printed: pad carrier (underside)
+{
+  const c = F.pad_carrier, G = D.contact_geometry;
+  const g = grp('pads'); g.position.set(0, L.pads_center_y, Z0 - c[2]);
+  stl('pad_carrier', M.print, g, [0, 0, c[2]], [0, Math.PI, 0]);   // printed pockets-up, installed pockets-down
+  for (const x of [-G.group_spacing/2, G.group_spacing/2])
+    boxc([G.pad_w, G.pad_d, F.fr4_t], [x, 0, -(F.fr4_t - F.pad_pocket_depth)], M.copper, g);   // FR4 stands proud below
+  reg(g, {name:'Pad carrier', kind:'print', dims:`${c[0]} × ${c[1]} × ${c[2]} mm`, ex:[0,0,-1],
+          note:`Two ${G.pad_w}×${G.pad_d} copper-clad pads, ${G.pad_gap} mm apart, on the underside behind the bumper. Pads are dead when undocked.`});
+}
+
+// ---------- reference dock + printed pin block
+{
+  const Dk = D.home_base, G = D.contact_geometry, b = F.dock_block;
+  const g = grp('dock', scene); g.position.set(0, DOCK_Y, 0);
+  wedge(Dk.w, Dk.ramp_d, Dk.ramp_h, M.dock, g);
+  box([Dk.w, Dk.d - Dk.ramp_d, Dk.h], [-Dk.w/2, Dk.ramp_d, 0], M.dock, g);
+  for (const s of [-1,1]) { const yc = Dk.ramp_d - 25, sc = box([16, 40, 0.6], [0,0,0], M.copper, g);
+    sc.position.set(s*Dk.stock_contact_spacing/2, yc, yc/Dk.ramp_d*Dk.ramp_h + 0.3); sc.rotation.x = RAMP_ANG; }
+  reg(g, {name:'Home Base (stock)', kind:'ref', dims:`${Dk.w} × ${Dk.d} × ${Dk.h} mm`, mass:Dk.mass_g, ex:[0,0,-2],
+          note:`Untouched. Its own contacts still charge the Roomba\'s NiMH; the second rail rides on the pin block lower down the ramp. The robot is drawn nose-up ${(DOCK_PITCH*180/Math.PI).toFixed(1)}° with its caster on the slope.`});
+  const py = L.pads_center_y - DOCK_Y;                                     // on the slope, under the pads
+  const pb = grp('pinblock', scene); pb.position.set(0, L.pads_center_y, py/Dk.ramp_d*Dk.ramp_h); pb.rotation.x = RAMP_ANG;
+  stl('dock_pin_block', M.print, pb);
+  for (const gx of [-G.group_spacing/2, G.group_spacing/2]) for (const px of [-G.pin_pitch_in_group/2, G.pin_pitch_in_group/2])
+    cylz(0.8, F.pin_proud, [gx+px, 0, b[2]], M.pin, pb, 12);
+  reg(pb, {name:'Dock pin block', kind:'print', dims:`${b[0]} × ${b[1]} × ${b[2]} mm`, ex:[0,0,-2],
+          note:`Four P75-B1 pins, two per polarity, groups ${G.group_spacing} mm apart; ±${G.working_tolerance} mm docking tolerance, a short would take ${G.short_threshold} mm. Only ${b[2]} mm thick with 45° lead-ins so the caster rolls over it. Pin height is set on assembly: dock, measure ramp-to-copper, press the pins to sit ${G.pin_compression} mm above that.`});
+}
+
+// ------------------------------------------------------------ cable harness
+// Every cable is a Catmull-Rom spline through its two real connector positions plus a few
+// routing waypoints, swept as a TubeGeometry at the true OD of its gauge.  Nothing here is
+// baked: solveHarness() reads both endpoints' CURRENT world positions, drags the waypoints
+// along with them, re-derives the sag from how much slack is left, and rebuilds the tube.
+// So the loom stretches with the explode slider and follows the camera as it tilts.
+// Cables are deliberately NOT reg()'d - they are not parts and must not enter the counts.
+const harness = grp('harness');
+const OBJ = n => scene.getObjectByName(n);
+const PORT = D.ports, BMS = D.bms_daier_3s;
+const HW = { pads:OBJ('pads'), drok:OBJ('drok'), bms:OBJ('bms'), ina:OBJ('ina'),
+             lipo:OBJ('lipo'), jet:OBJ('jetson'), cam:OBJ('camera'), shell:OBJ('roomba') };
+
+// --- connector positions, each in its owner's local frame -----------------------------
+// BMS: the one set of measured ports.  Same mapping ref_bms() uses: at(px,py) -> [py-W/2, px-L/2, T].
+const bmsPad = q => [q[1] - BMS.w/2, q[0] - BMS.l/2, BMS.t + 1.3];
+const IN = PORT.ina219;
+const inaPin = i => [IN.header_x, IN.header_y0 + i*IN.header_pitch, IN.header_z];   // 0..5 VCC GND SCL SDA VIN+ VIN-
+const JH = PORT.jetson;
+const jPin = n => [JH.header_pin1[0] + Math.floor((n-1)/2)*JH.header_pitch,
+                   JH.header_pin1[1] + (n % 2 ? 0 : JH.header_row_gap), JH.header_pin1[2]];
+const balPin = i => [PORT.lipo.balance_first[0], PORT.lipo.balance_first[1] + i*PORT.lipo.balance_pitch,
+                     PORT.lipo.balance_first[2]];
+
+// --- solver ---------------------------------------------------------------------------
+const R14 = 1.75, R16 = 1.5, R18 = 1.25, R22 = 0.85, RUSB = 2.0;   // half the real silicone OD
+const cables = [], _p = new THREE.Vector3(), _dA = new THREE.Vector3(), _dB = new THREE.Vector3();
+const YAXIS = new THREE.Vector3(0, 1, 0);
+const port = (g, p) => ({g, p});
+function portPos(e, out){ out.set(e.p[0], e.p[1], e.p[2]); e.g.localToWorld(out); return harness.worldToLocal(out); }
+
+function cable(o){
+  const m = new THREE.Mesh(new THREE.BufferGeometry(), o.mat);
+  m.frustumCulled = false; harness.add(m);
+  const d = o.off || [0,0,0];
+  const via = (o.via || []).map(v => new THREE.Vector3(v[0]+d[0], v[1]+d[1], v[2]+d[2]));
+  const A0 = portPos(o.a, new THREE.Vector3()), B0 = portPos(o.b, new THREE.Vector3());
+  const pts = [A0, ...via, B0];
+  let run = 0; const t = [0];
+  for (let i = 1; i < pts.length; i++) run += pts[i].distanceTo(pts[i-1]);
+  let acc = 0;
+  for (let i = 1; i < pts.length; i++) { acc += pts[i].distanceTo(pts[i-1]); t.push(acc/run); }
+  const c = {m, a:o.a, b:o.b, A0, B0, via, t, r:o.r, run,
+             L0: run * (1 + (o.slack === undefined ? 0.09 : o.slack)),
+             sag: o.sag === undefined ? 6 : o.sag, floor: o.floor === undefined ? -1e9 : o.floor, hw:null};
+  if (o.hw) c.hw = o.hw.map(h => ({m:h[0], t:t[h[1]+1]}));
+  cables.push(c); return c;
+}
+function solveHarness(){
+  if (!harness.visible) return;
+  scene.updateMatrixWorld(true);
+  for (const c of cables) {
+    const A = portPos(c.a, new THREE.Vector3()), B = portPos(c.b, new THREE.Vector3());
+    _dA.copy(A).sub(c.A0); _dB.copy(B).sub(c.B0);
+    const pts = [A];
+    for (let i = 0; i < c.via.length; i++) {                       // waypoints ride with the ends
+      const ti = c.t[i+1];
+      pts.push(c.via[i].clone().addScaledVector(_dA, 1-ti).addScaledVector(_dB, ti));
+    }
+    pts.push(B);
+    let d = 0; for (let i = 1; i < pts.length; i++) d += pts[i].distanceTo(pts[i-1]);
+    const rest = Math.max(1e-4, 1 - c.run/c.L0);                   // slack fraction when nothing has moved
+    const s = c.sag * Math.min(1, Math.sqrt(Math.max(0, 1 - d/c.L0) / rest));   // taut -> no droop
+    for (let i = 1; i < pts.length - 1; i++) {
+      const ti = c.t[i], z0 = pts[i].z;
+      pts[i].z = Math.max(z0 - s*4*ti*(1-ti), Math.min(c.floor, z0));           // never sag through the deck
+    }
+    const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+    const seg = Math.max(16, Math.min(110, Math.round(d/6)));
+    c.m.geometry.dispose();
+    c.m.geometry = new THREE.TubeGeometry(curve, seg, c.r, 7, false);
+    if (c.hw) for (const h of c.hw) {                              // inline bodies ride the wire
+      curve.getPointAt(h.t, _p); h.m.position.copy(_p);
+      curve.getTangentAt(h.t, _p); h.m.quaternion.setFromUnitVectors(YAXIS, _p);
+    }
+  }
+  dirty();
+}
+const inlineCyl = (r, l, m) => { const g = new THREE.Mesh(new THREE.CylinderGeometry(r, r, l, 20), m);
+  g.frustumCulled = false; harness.add(g); return g; };            // cylinder axis is +Y, i.e. along the wire
+const inlineBox = (w, l, h, m) => { const g = new THREE.Mesh(new THREE.BoxGeometry(w, l, h), m);
+  g.frustumCulled = false; harness.add(g); return g; };
+
+// --- routing lanes (robot frame) -------------------------------------------------------
+const DKZ = DECK + 3;           // crossing the open deck between two carriers, just off the shell
+const DFLOOR = DECK + 2;        // nothing droops into the Roomba's lid
+const LIDZ = LID_TOP + 6;       // the lane over the battery lid, clear of the BMS and the INA219
+scene.updateMatrixWorld(true);
+
+// 1. dock pads -> DROK input.  18 AWG, and the only pair that crosses the shell: up through the
+//    drilled grommet at ports.loom.deck_grommet, then forward onto the front plate.  The buck's
+//    input terminals sit at robot +X, 31 mm from the grommet, so the pair never crosses it.
+const GR = PORT.loom.deck_grommet;
+for (const w of [{p:'lead_plus',  q:'in_plus',  m:M.wpos, o:[0,0, 1.4], y:76},
+                 {p:'lead_minus', q:'in_minus', m:M.wneg, o:[0,0,-1.4], y:96}])
+  cable({a:port(HW.pads, PORT.pad_carrier[w.p]), b:port(HW.drok, PORT.drok[w.q]), mat:w.m, r:R18, off:w.o,
+         sag:3, slack:.07, floor:Z0,                                  // taped to the shell underside, never hanging below it
+         via:[[w.o[2] > 0 ? 20 : -20, 88, 9], [24, 72, 9], [GR[0], GR[1], 20], [GR[0], GR[1], GR[2]+5],
+              [43, 57, PZ+3], [41, 64, PZ+7], [37, w.y - 8, PZ+13]]});
+
+// 2. DROK output -> 1N5822 Schottky -> BMS P+ / P-.  18 AWG.  The outputs face robot -X, so the
+//    pair runs straight off the front plate, down the open wedge between the hub and the cradle,
+//    and up the cradle's inboard wall onto the lid.  It never crosses the deck twice.
+for (const w of [{q:'out_plus',  b:BMS.pads_round.Pplus,  m:M.wpos, z: 1.2, hw:1},
+                 {q:'out_minus', b:BMS.pads_round.Pminus, m:M.wneg, z:-1.2, hw:0}])
+  cable({a:port(HW.drok, PORT.drok[w.q]), b:port(HW.bms, bmsPad(w.b)), mat:w.m, r:R18, off:[0,0,w.z],
+         sag:3, slack:.11, floor:PZ+1, hw: w.hw ? [[inlineCyl(1.7, 6.5, M.diode), 3]] : null,
+         via:[[-37, 84, PZ+16], [-43, 71, PZ+10], [-49, 60, PZ+5], [-55, 48, DKZ+2],
+              [-58, 30, DKZ+2], [-60, 16, DKZ+3], [-60, 10, LID_TOP-6], [-67, 8, LIDZ], [-84, 6, LIDZ]]});
+
+// 3. LiPo T-plug -> BMS B+ / B-.  14 AWG, the heaviest pair.  The leads leave the pack's FRONT
+//    face, which is the end the cradle and the lid both carry a notch for: up through the notch,
+//    over the lip and aft along the lid to the pads at the board's corners.
+const packRun = [[-92, 70, 110], [-96, 74, LID_TOP-4], [-99, 77, LIDZ], [-102, 60, LIDZ],
+                 [-104, 40, LIDZ]];
+cable({a:port(HW.lipo, PORT.lipo.t_plus), b:port(HW.bms, bmsPad(BMS.pads.Bplus)), mat:M.wpos, r:R14,
+       sag:4, slack:.10, floor:LID_TOP+4, off:[0, 0, 2.2],
+       via:[...packRun, [-106, 18, LIDZ], [-107, 6, LIDZ-2]]});
+cable({a:port(HW.lipo, PORT.lipo.t_minus), b:port(HW.bms, bmsPad(BMS.pads.Bminus)), mat:M.wneg, r:R14,
+       sag:4, slack:.10, floor:LID_TOP+4, off:[0, 0, -2.2],
+       via:[...packRun, [-92, 42, LIDZ], [-78, 48, LIDZ-2]]});
+
+// 4. LiPo balance tail -> the four BMS solder pads.  22 AWG bundled 2x2 at 2 mm centres, following
+//    the T-plug over the end wall and fanning out only at the pads, which sit at all four corners.
+const balRun = [[-88, 70, 104], [-92, 74, LID_TOP-4], [-95, 77, LIDZ], [-96, 62, LIDZ],
+                [-92, 46, LIDZ]];
+const balTail = [[[-82, 50, LIDZ], [-74, 51, LIDZ-2]],                     // B-  inboard, far end
+                 [[-86, 34, LIDZ], [-78, 16, LIDZ], [-73, 7, LIDZ-2]],     // B1  inboard, near end
+                 [[-100, 50, LIDZ], [-105, 52, LIDZ-2]],                   // B2  outboard, far end
+                 [[-102, 34, LIDZ], [-107, 16, LIDZ], [-108, 6, LIDZ-2]]];  // B+  outboard, near end
+const balPad = [BMS.pads.Bminus, BMS.pads.B1, BMS.pads.B2, BMS.pads.Bplus];
+const balMat = [M.wbal0, M.wbal1, M.wbal2, M.wbal3];
+const balOff = [[-1, 0, 1], [1, 0, 1], [-1, 0, -1], [1, 0, -1]];
+for (let i = 0; i < 4; i++)
+  cable({a:port(HW.lipo, balPin(i)), b:port(HW.bms, bmsPad(balPad[i])), mat:balMat[i], r:R22,
+         sag:4, slack:.11, floor:LID_TOP+4, off:balOff[i], via:[...balRun, ...balTail[i]]});
+
+// 5. BMS P+ -> INA219 VIN+.  High-side shunt, so the whole load current goes through the meter.
+//    Both boards are on the lid, so this is the shortest run in the loom.
+cable({a:port(HW.bms, bmsPad(BMS.pads_round.Pplus)), b:port(HW.ina, inaPin(4)), mat:M.wpos, r:R18,
+       sag:2, slack:.12, floor:LID_TOP+3,
+       via:[[-92, -2, LIDZ], [-86, -14, LIDZ], [-80, -26, LIDZ-2]]});
+
+// 6. INA219 VIN- -> 3 A inline fuse -> rocker switch -> Jetson barrel jack.  16 AWG, the load feed,
+//    down off the lid and straight across the empty rear deck.  The load runs left to right in this
+//    layout, so the FUSE comes first, nearest the source: everything downstream of it is protected.
+const SW = PORT.loom.switch_mount, FU = PORT.loom.fuse_mount;
+const FUSE_R = D.fuse_holder_inline.cap_w/2 - 1;
+cable({a:port(HW.ina, inaPin(5)), b:port(HW.jet, PORT.jetson.barrel), mat:M.wpos, r:R16,
+       sag:6, slack:.10, floor:DFLOOR,
+       hw:[[inlineCyl(FUSE_R, D.fuse_holder_inline.body_len, M.fuse), 3],
+           [inlineBox(19, 15, 14, M.swbody), 5]],
+       via:[[-76, -46, LID_TOP-2], [-70, -54, 110], [-62, -58, DKZ+8],
+            [FU[0], FU[1], DECK + FUSE_R],       // z = its own radius, so the holder rests on the shell
+            [-18, -62, DKZ+4],
+            [SW[0], SW[1], DECK + 7],            // z = half the switch body, likewise
+            [26, -58, DKZ+4], [50, -46, PZ+6], [59, -37, PZ+10]]});
+
+// 7. BMS P- -> Jetson barrel jack, the return conductor of the same pigtail.
+cable({a:port(HW.bms, bmsPad(BMS.pads_round.Pminus)), b:port(HW.jet, PORT.jetson.barrel_neg), mat:M.wneg, r:R16,
+       sag:6, slack:.10, floor:DFLOOR,
+       via:[[-78, -2, LIDZ-2], [-74, -20, LIDZ-2], [-71, -38, LID_TOP-4], [-66, -50, 106],
+            [-60, -62, DKZ+7], [-28, -68, DKZ+4], [8, -68, DKZ+4], [36, -60, DKZ+4],
+            [52, -46, PZ+4], [57, -38, PZ+6]]});
+
+// 8. INA219 SDA/SCL/VCC/GND -> Jetson 40-pin header, pins 27/28 with 3V3 on 17 and GND on 25.
+//    22 AWG jumpers bundled 2x2 along the rear deck and up the Jetson plate's outboard edge, which
+//    is the side the header sits on once the board is turned I/O-inboard.
+const i2cRun = [[-72, -30, LIDZ-3], [-66, -42, LID_TOP-8], [-60, -52, 104], [-56, -64, DKZ+6],
+                [-24, -72, DKZ+3], [16, -74, DKZ+3], [56, -76, DKZ+3], [92, -80, DKZ+3],
+                [118, -76, PZ+4], [136, -66, PZ+7], [143, -46, PZ+13], [143, -28, PZ+16]];
+const i2c = [[0, 17, M.wpos], [1, 25, M.wneg], [2, 28, M.wdata2], [3, 27, M.wdata]];   // VCC GND SCL SDA
+const i2cOff = [[-1.4, 0, 1.4], [1.4, 0, 1.4], [-1.4, 0, -1.4], [1.4, 0, -1.4]];
+i2c.forEach((w, i) => cable({a:port(HW.ina, inaPin(w[0])), b:port(HW.jet, jPin(w[1])), mat:w[2], r:R22,
+       sag:7, slack:.11, floor:DFLOOR, off:i2cOff[i], via:i2cRun}));
+
+// 9. Jetson USB 3.1 -> RealSense D435i.  Off the rocker at ports.loom.camera_lane, then aft across
+//    the front plate and up the open deck to the Jetson's inboard I/O edge - no mast to climb.
+const CL = PORT.loom.camera_lane;
+cable({a:port(HW.jet, PORT.jetson.usb_upper), b:port(HW.cam, PORT.camera.usb_c), mat:M.wusb, r:RUSB,
+       sag:4, slack:.09, floor:PZ+2,
+       via:[[54, 14, PZ+18], [50, 30, PZ+10], [48, 46, PZ+7], [48, 62, PZ+6], [44, 80, PZ+7],
+            [CL[0], CL[1], PZ+9], [CL[0]-3, CL[1]+9, PZ+15]]});
+
+// 10. Jetson USB 2.0 -> FTDI -> Roomba mini-DIN, rear right under its snap-away guard.
+cable({a:port(HW.jet, PORT.jetson.usb_lower), b:port(HW.shell, D.roomba_690.minidin_position), mat:M.wusb, r:RUSB,
+       sag:5, slack:.09, floor:DFLOOR,
+       via:[[52, 10, PZ+12], [48, -12, PZ+6], [48, -36, DKZ+4], [52, -58, DKZ+3], [66, -74, DKZ+3],
+            [92, -84, DKZ+2], [112, -90, DECK+2], [118, -94, DECK-8]]});
+
+document.getElementById('chk-harness').addEventListener('change', e => {
+  harness.visible = e.target.checked; if (harness.visible) solveHarness(); else dirty(); });
+solveHarness();
+
+// ------------------------------------------------------------ explode + tilt
+function setExplode(k){
+  for (const g of parts) { if (g.userData.pivotChild) continue;
+    const b = g.userData.base, e = g.userData.ex; g.position.set(b.x + e[0]*k, b.y + e[1]*k, b.z + e[2]*k); }
+  const b = camPivot.userData.base, e = camPivot.userData.ex;      // not reg()'d: its children ride it
+  camPivot.position.set(b.x + e[0]*k, b.y + e[1]*k, b.z + e[2]*k);
+  solveHarness(); dirty();
+}
+// tilt is about the front carrier's own Y, and the pivot is the camera's optical centre, so the
+// camera aims without translating.  Sign follows roomba_nx.scad's rotate([0, -tilt, 0]).
+function setTilt(deg){ camPivot.rotation.y = -deg*Math.PI/180; solveHarness(); dirty(); }
+document.getElementById('explode').addEventListener('input', e => { document.getElementById('exv').textContent = e.target.value + ' mm'; setExplode(+e.target.value); });
+document.getElementById('tilt').addEventListener('input', e => { document.getElementById('tiltv').textContent = (e.target.value<0?'−':'+') + Math.abs(e.target.value) + '°'; setTilt(+e.target.value); });
+{ const ti = document.getElementById('tilt');          // slider follows the dimension table
+  ti.min = F.camera.tilt_min; ti.max = F.camera.tilt_max; ti.value = L.camera_tilt_deg;
+  const d = L.camera_tilt_deg;
+  document.getElementById('tiltv').textContent = (d < 0 ? '\u2212' : '+') + Math.abs(d) + '\u00B0';
+}
+setTilt(L.camera_tilt_deg);
+
+// ------------------------------------------------------------ orbit controls (spherical, z-up)
+const ctl = {target:new THREE.Vector3(0, 30, 55), r:700, theta:-0.9, phi:1.05};
+function place(){
+  const sp = Math.sin(ctl.phi), x = ctl.r*sp*Math.cos(ctl.theta), y = ctl.r*sp*Math.sin(ctl.theta), z = ctl.r*Math.cos(ctl.phi);
+  cam.position.set(ctl.target.x + x, ctl.target.y + y, ctl.target.z + z); cam.lookAt(ctl.target); dirty();
+}
+let drag = null;
+canvas.addEventListener('pointerdown', e => { drag = {x:e.clientX, y:e.clientY, pan:e.shiftKey || e.button===2, moved:false}; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointermove', e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (Math.abs(dx)+Math.abs(dy) > 2) drag.moved = true;
+  if (drag.pan) { const s = ctl.r/900; const right = new THREE.Vector3().crossVectors(cam.getWorldDirection(new THREE.Vector3()), cam.up).normalize();
+    ctl.target.addScaledVector(right, -dx*s); ctl.target.z += dy*s; }
+  else { ctl.theta -= dx*0.006; ctl.phi = Math.min(Math.PI-0.05, Math.max(0.05, ctl.phi - dy*0.006)); }
+  drag.x = e.clientX; drag.y = e.clientY; place(); });
+canvas.addEventListener('pointerup', e => { if (drag && !drag.moved) pick(e); drag = null; });
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('wheel', e => { e.preventDefault(); ctl.r = Math.min(3000, Math.max(120, ctl.r * (1 + Math.sign(e.deltaY)*0.09))); place(); }, {passive:false});
+const VIEWS = { iso:[-0.9,1.05], top:[-Math.PI/2, 0.02], front:[Math.PI/2, Math.PI/2-0.15], side:[0, Math.PI/2-0.15], under:[-0.9, Math.PI-0.35] };
+document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-view]').forEach(x => x.classList.remove('on')); b.classList.add('on');
+  [ctl.theta, ctl.phi] = VIEWS[b.dataset.view]; place(); }));
+
+// ------------------------------------------------------------ selection
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+let selected = null;
+function ownerOf(o){ while (o && !parts.includes(o)) o = o.parent; return o; }
+function pick(e){
+  const r = canvas.getBoundingClientRect(); ptr.set(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
+  ray.setFromCamera(ptr, cam);
+  const hit = ray.intersectObjects(parts.filter(p => p.visible), true)[0];
+  select(hit ? ownerOf(hit.object) : null);
+}
+function select(g){
+  if (selected) selected.traverse(o => { if (o.isMesh) o.material.emissive.setHex(0); });
+  selected = g;
+  document.querySelectorAll('.row').forEach(r => r.classList.toggle('sel', r.dataset.id === (g ? g.name : '')));
+  const box = document.getElementById('sel');
+  if (!g) { box.classList.remove('on'); dirty(); return; }
+  g.traverse(o => { if (o.isMesh) o.material.emissive.setHex(0x3a2a10); });
+  const u = g.userData; box.querySelector('.t').textContent = u.name;
+  box.querySelector('.m').textContent = u.dims + (u.mass ? ` · ${u.mass} g` : '') + ` · ${u.kind==='print'?'printed':'bought'}`;
+  box.querySelector('.b').textContent = u.note || ''; box.classList.add('on'); dirty();
+}
+// materials are shared, so give each mesh its own for emissive highlighting
+parts.forEach(g => g.traverse(o => { if (o.isMesh) o.material = o.material.clone(); }));
+
+// ------------------------------------------------------------ list panel
+const list = document.getElementById('list');
+function section(title, kind){
+  const h = document.createElement('div'); h.className = 'grp';
+  h.innerHTML = `<span>${title}</span><span><button data-all="${kind}" data-on="1">all</button> <button data-all="${kind}" data-on="0">none</button></span>`;
+  list.appendChild(h);
+  for (const g of parts.filter(p => p.userData.kind === kind)) {
+    const u = g.userData, row = document.createElement('div'); row.className = 'row'; row.dataset.id = g.name; row.setAttribute('role','listitem');
+    const col = '#' + (g.children.find(c => c.isMesh)?.material.color.getHexString() || 'E9A055');
+    row.innerHTML = `<input type="checkbox" checked aria-label="show ${u.name}"><span class="n"><i class="sw" style="background:${col}"></i>${u.name}</span><span class="d">${u.mass ? u.mass+' g' : u.dims}</span>`;
+    row.querySelector('input').addEventListener('change', e => { g.visible = e.target.checked; dirty(); });
+    row.addEventListener('click', e => { if (e.target.tagName !== 'INPUT') select(g); });
+    list.appendChild(row);
+  }
+}
+section('Printed parts', 'print'); section('Bought parts', 'ref');
+list.querySelectorAll('[data-all]').forEach(b => b.addEventListener('click', () => {
+  const on = b.dataset.on === '1'; for (const g of parts.filter(p => p.userData.kind === b.dataset.all)) g.visible = on;
+  list.querySelectorAll('.row').forEach(r => { const g = parts.find(p => p.name === r.dataset.id); if (g && g.userData.kind === b.dataset.all) r.querySelector('input').checked = on; });
+  dirty(); }));
+const bought = parts.filter(p => p.userData.kind === 'ref' && p.name !== 'roomba' && p.name !== 'dock');
+// Catalogue masses, so this is the BOUGHT total only; hardware/verify.py weighs the printed
+// geometry as well and puts the whole payload at 989 g with its centre 1.9 mm off the centreline.
+document.getElementById('mass').textContent = bought.reduce((s,p) => s + (p.userData.mass||0), 0)
+  + ' g bought + ~115 g printed';
+document.getElementById('nb').textContent = bought.length; document.getElementById('np').textContent = parts.filter(p => p.userData.kind==='print').length;
+
+// ------------------------------------------------------------ render on demand
+function resize(){ const r = canvas.parentElement.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); cam.aspect = r.width/r.height; cam.updateProjectionMatrix(); dirty(); }
+new ResizeObserver(resize).observe(canvas.parentElement);
+(function loop(){ if (needs) { needs = false; renderer.render(scene, cam); } requestAnimationFrame(loop); })();
+applyTheme(); resize(); place();
+</script>
+<style>
+  /* ---- guided build ---------------------------------------------------- */
+  #anim .t{margin:10px 0 5px;color:var(--ink);font-weight:600;font-size:13.5px;line-height:1.25;text-wrap:balance}
+  #anim .c{margin:0;color:var(--muted);font-size:12.5px;line-height:1.5}
+  #anim .views button[disabled]{opacity:.35;cursor:default}
+  #anim .views button:first-child,#anim .views button:nth-child(3){font-size:14px;line-height:1;padding:5px 11px}
+</style>
+<script>
+// =====================================================================================
+// Guided build.  A continuous timeline T over the build, not a set of slides: T runs
+// 0..N across N steps, step i owns [i, i+1), and every part's position, opacity and
+// every cable's drawn length is a pure function of T.  That is what makes the scrubber
+// work in both directions - there is no animation state to get out of sync, only a
+// number.
+//
+// It drives the existing API (parts[], userData.base/.ex, setExplode, solveHarness,
+// cables[], VIEWS, ctl/place, dirty) and rebinds no existing control, so the explode
+// slider, tilt, view buttons, part list and orbit all keep working while it runs.
+//
+// Order here is MECHANICAL assembly, bottom up - a different sequence from the build
+// sheet's ORDER section, which is commissioning and runs after this.
+// =====================================================================================
+(function(){
+  const byId = {};
+  for (const g of parts) byId[g.name] = g;
+  const moverFor = id => (id === 'rocker' || id === 'camera') ? camPivot : byId[id];
+
+  const STEPS = [
+    {t:'The stock robot', v:'iso', add:['roomba'], r:780, c:
+     'A Roomba 690, 330 mm across. Its deck is flat at 83 mm from y −116 all the way to +144 — measured, not taken from the spec. The only thing standing above it is the front IR boss at 90.9 mm, which is what the OI document’s 92.25 actually describes.'},
+
+    {t:'Hub — the first printed part', v:'top', add:['hub'], r:560, c:
+     'A Ø76 ring drops onto the deck around the Clean button. It carries nothing itself: it ties the three carrier tongues together and keeps the button reachable through its Ø60 bore. Its pads stop at r 53 so they miss the Jetson’s connector shells.'},
+
+    {t:'Right carrier — Jetson plate', v:'iso', add:['jplate'], r:660, c:
+     'Carrier one, at 90°. Watch the approach: it comes down outboard first, then slides in — because its tongue has to pass under the hub. It lands on two of the chassis’s own screw bosses. No adhesive anywhere on this robot.'},
+
+    {t:'Jetson Xavier NX', v:'iso', add:['jetson'], r:620, c:
+     'Onto four M3 standoffs, 6 mm tall. Six, not the five the spec implies: NVIDIA’s own CAD puts components 4.56 mm below the PCB, so 5 mm standoffs would have set the board down on its own capacitors.'},
+
+    {t:'Left carrier — battery cradle', v:'iso', add:['cradle'], r:660, c:
+     'Carrier two, at 180°, mirroring the Jetson plate and fitting the same way. Walls 3 mm, floor 2.5, and the box is cut 34 mm deep — the hard case’s full height rather than the soft pack’s, so either version of the battery drops in.'},
+
+    {t:'Ovonic 3S 8000 mAh', v:'iso', add:['lipo'], r:620, c:
+     'The pack lies on its side in the cradle. Four external lugs take a strap of about 141 mm girth; the first design ran the strap slots through the floor, which was useless once the cradle sat flat on the deck.'},
+
+    {t:'Cradle lid', v:'iso', add:['lid'], r:600, c:
+     'A cap, not an inset panel: a 2.5 mm lip inside a 6 mm skirt that reaches down over the full-height walls. It closes the box and becomes the shelf for the pack electronics.'},
+
+    {t:'BMS and current monitor', v:'iso', add:['bms','ina'], r:600, c:
+     'The Daier 3S BMS and the INA219 land on top of the lid, one after the other. Note where the whole left carrier stops: nothing on this robot goes aft of y −38 except the hub, which is the only reason the dust bin still slides out.'},
+
+    {t:'Front carrier', v:'iso', add:['fplate'], r:680, c:
+     'Carrier three, at 0°, same tongue-under-the-hub approach. It reaches y 144 — the last of the flat deck — and carries both the charger and the camera cheeks. The rear quadrant stays deliberately empty.'},
+
+    {t:'DROK buck converter', v:'top', add:['drok'], r:560, c:
+     'Rotated 180°, and that rotation is load-bearing: it puts the input 31 mm from the deck grommet instead of 93, and turns the output to face the battery. At 0° the buck fed backwards across the whole robot.'},
+
+    {t:'Camera', v:'front', add:['rocker','camera'], r:560, c:
+     'The D435i sits in a rocker between the cheeks, optical centre at z 110. That height is derived, not chosen — it is the lowest mounting at which the front IR boss only occludes floor already nearer than the sensor’s 175 mm minimum range. The pivot is two M3 stubs, one per side, because the bracket is 116 mm across and the longest screw on hand is M3×30.'},
+
+    {t:'Charge pads', v:'under', add:['pads'], r:640, c:
+     'Underneath now — the carrier rises straight up into the chassis at y 100, pockets down. It prints pockets-up and installs flipped. This is the only part of the build you fit with the robot upside down.'},
+
+    {t:'Dock contacts', v:'side', add:['dock','pinblock'], r:860, c:
+     'The Home Base rolls in from ahead and its pogo block comes up to meet the pads. The pair only mates with the robot nose-up on the ramp at 2.30°, which is the pitch this whole view is drawn at: 6 mm of block plus 3.5 mm of carrier is 9.5 mm against 8 mm of ground clearance, so level, they would interfere. Still flagged unresolved pending a measurement of the real ramp.'},
+
+    {t:'Wiring', v:'iso', add:['harness'], r:720, secs:9, c:
+     'Last, and slowest — every conductor draws itself in along its real routed path, in the order you would build it. Pack to BMS, out through the fuse, the switch and the INA219 to the DROK, then the Jetson’s barrel jack; the camera takes USB-C up the front lane. The fuse sits ahead of the switch so the whole run is protected — with the source on the left, the other order left that leg live and unfused.'}
+  ];
+
+  const N = STEPS.length;
+  const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const OUT_D = 96;      // mm the lateral leg of an approach starts out at
+  const SPAN  = 0.62;    // fraction of a step spent moving; the rest holds, to be read
+  const STAG  = 0.10;    // a second part in the same step starts this much later
+  const SECS  = 2.5;     // seconds per step at play speed
+
+  // --- approach paths ------------------------------------------------------------------
+  // `out` is the direction a part flies in from, in its own parent's frame; `lift` is how
+  // high above the seat it hangs first.  Splitting the move into a lateral leg and a
+  // vertical leg is what keeps parts out of each other - nothing travels sideways at seat
+  // height, where the walls are.  Two modes, because two situations:
+  //   drop  - across, then straight down into the seat.  Everything that lands on a face.
+  //   slide - down outboard first, THEN in.  The three carriers, whose tongues have to
+  //           pass UNDER the hub; dropping them vertically would drive a tongue through it.
+  const ENTRY = {
+    roomba:   {mode:'fade'},
+    hub:      {out:[0,0,0], lift: 72},
+    jplate:   {out:[1,0,0], lift: 58, mode:'slide'},
+    jetson:   {out:[1,0,0], lift: 78},
+    cradle:   {out:[1,0,0], lift: 58, mode:'slide'},
+    lipo:     {out:[1,0,0], lift: 84},
+    lid:      {out:[1,0,0], lift: 78},
+    bms:      {out:[1,0,0], lift: 62},
+    ina:      {out:[1,0,0], lift: 62},
+    fplate:   {out:[1,0,0], lift: 58, mode:'slide'},
+    drok:     {out:[1,0,0], lift: 66},
+    camPivot: {out:[1,0,0], lift: 74},
+    pads:     {out:[0,0,0], lift:-72},
+    dock:     {out:[0,1,0], lift:  0},
+    pinblock: {out:[0,1,0], lift:-34}
+  };
+
+  const clamp01 = k => k < 0 ? 0 : k > 1 ? 1 : k;
+  const eCubic  = k => k < 0.5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3)/2;          // in-out
+  const eQuart  = k => k < 0.5 ? 8*k*k*k*k : 1 - Math.pow(-2*k + 2, 4)/2;        // heavier settle
+  const win = (u, a, b) => clamp01((u - a) / (b - a));
+
+  function meshesOf(node){ const m = []; node.traverse(o => { if (o.isMesh) m.push(o); }); return m; }
+
+  // One plan per step: the unique nodes it introduces, each with its own approach vector
+  // and its own slice of the step, so two parts in one step arrive in sequence.
+  const plan = STEPS.map(s => {
+    const nodes = [], seen = new Set();
+    let j = 0;
+    for (const id of s.add){
+      if (id === 'harness') continue;
+      const node = moverFor(id);
+      if (!node || seen.has(node)) continue;
+      seen.add(node);
+      const e = ENTRY[node.name] || ENTRY[id] || {out:[0,0,0], lift:60};
+      const out = new THREE.Vector3(e.out ? e.out[0] : 0, e.out ? e.out[1] : 0, e.out ? e.out[2] : 0);
+      if (out.lengthSq() > 0) out.normalize().multiplyScalar(OUT_D);
+      const s0 = j*STAG, s1 = SPAN + j*STAG, len = s1 - s0;
+      const slide = e.mode === 'slide';
+      nodes.push({
+        node, out, lift: e.lift || 0, base: node.userData.base.clone(),
+        ex: node.userData.ex || [0,0,0], meshes: meshesOf(node),
+        // the two legs, overlapping so the corner between them is rounded, not square
+        lat: slide ? [s0 + len*0.38, s1] : [s0, s0 + len*0.58],
+        ver: slide ? [s0, s0 + len*0.50] : [s0 + len*0.42, s1],
+        fade:[s0, s0 + len*0.30]
+      });
+      j++;
+    }
+    return {ids: s.add, nodes};
+  });
+
+  // --- opacity, restored to whatever each material started as ---------------------------
+  // The shell and several envelopes are deliberately translucent, so "done fading" means
+  // back to the material's own opacity, never a blanket 1.
+  const ORIG = new WeakMap();
+  function origOf(mat){
+    if (!ORIG.has(mat)) ORIG.set(mat, {t: mat.transparent, o: mat.opacity});
+    return ORIG.get(mat);
+  }
+  function fade(meshes, a){
+    for (const m of meshes){
+      const mat = m.material; if (!mat) continue;
+      const o = origOf(mat);
+      if (a >= 1){
+        if (mat.transparent !== o.t || mat.opacity !== o.o){
+          mat.transparent = o.t; mat.opacity = o.o; mat.needsUpdate = true;
+        }
+      } else {
+        if (!mat.transparent){ mat.transparent = true; mat.needsUpdate = true; }
+        mat.opacity = o.o * a;
+      }
+    }
+  }
+
+  // --- wires -----------------------------------------------------------------------------
+  // Every cable is a TubeGeometry whose indices are emitted ring by ring ALONG the tube, so
+  // clipping the draw range to a whole number of rings grows the conductor from its source
+  // end to its load end, following the real routed curve - not a fade, an actual snake.
+  // solveHarness() rebuilds these buffers whenever anything moves, so this re-applies after
+  // every one of its callers.
+  const RING = 7 * 6;          // radialSegments * 6 indices per ring
+  const GROW = 0.42;           // fraction of the wiring step one cable takes to draw
+  let wireP = 1;
+  function applyWires(){
+    const n = cables.length; if (!n) return;
+    const gap = n > 1 ? (1 - GROW) / (n - 1) : 0;
+    for (let k = 0; k < n; k++){
+      const c = cables[k];
+      const p = REDUCED ? 1 : clamp01((wireP - k*gap) / GROW);
+      const g = c.m.geometry;
+      if (g && g.index){
+        const rings = Math.floor(g.index.count / RING);
+        g.setDrawRange(0, Math.floor(rings * eCubic(p)) * RING);
+      }
+      c.m.visible = p > 0.001;
+      // the fuse body and the switch ride the wire - they appear as it reaches them
+      if (c.hw) for (const h of c.hw) h.m.visible = p >= h.t;
+    }
+    dirty();
+  }
+
+  // --- visibility, honouring anything the user hid by hand in the list --------------------
+  const manual = new Set();
+  function setVis(id, on){
+    if (manual.has(id)) on = false;
+    if (id === 'harness'){
+      if (harness.visible !== on){ harness.visible = on; if (on) solveHarness(); }
+      document.getElementById('chk-harness').checked = on;
+      return;
+    }
+    const g = byId[id]; if (!g) return;
+    g.visible = on;
+    const cb = document.querySelector('.row[data-id="' + id + '"] input');
+    if (cb) cb.checked = on;
+  }
+
+  // --- the timeline ------------------------------------------------------------------------
+  let T = N, target = N, raf = 0, last = 0, follow = true, lastIdx = -1;
+
+  function setT(t){
+    T = Math.max(0, Math.min(N, t));
+    const K = +document.getElementById('explode').value;    // compose with the explode slider
+    for (let i = 0; i < N; i++){
+      const st = plan[i], u = T - i, on = u > 0;
+      for (const id of st.ids) setVis(id, on);
+      if (!on) continue;
+      for (const nd of st.nodes){
+        const l = REDUCED ? 1 : eCubic(win(u, nd.lat[0], nd.lat[1]));
+        const v = REDUCED ? 1 : eQuart(win(u, nd.ver[0], nd.ver[1]));
+        const a = REDUCED ? 1 : win(u, nd.fade[0], nd.fade[1]);
+        nd.node.position.set(
+          nd.base.x + nd.ex[0]*K + nd.out.x*(1 - l),
+          nd.base.y + nd.ex[1]*K + nd.out.y*(1 - l),
+          nd.base.z + nd.ex[2]*K + nd.out.z*(1 - l) + nd.lift*(1 - v));
+        fade(nd.meshes, a);
+      }
+    }
+    const uw = T - (N - 1);
+    wireP = uw <= 0 ? 0 : Math.min(1, uw / 0.88);
+    if (harness.visible){ solveHarness(); applyWires(); }
+    dirty(); paint();
+  }
+
+  // --- camera, eased, and only while the viewer has not taken the wheel ----------------------
+  let want = null, craf = 0;
+  function aim(v, r){
+    if (!follow || !VIEWS[v]) return;
+    want = {theta: VIEWS[v][0], phi: VIEWS[v][1], r: r || ctl.r};
+    if (!craf) craf = requestAnimationFrame(camStep);
+  }
+  function camStep(){
+    craf = 0;
+    if (!want || !follow){ want = null; return; }
+    let dth = want.theta - ctl.theta;
+    while (dth >  Math.PI) dth -= 2*Math.PI;
+    while (dth < -Math.PI) dth += 2*Math.PI;
+    const dph = want.phi - ctl.phi, dr = want.r - ctl.r;
+    if (Math.abs(dth) < 0.003 && Math.abs(dph) < 0.003 && Math.abs(dr) < 1.5){ want = null; return; }
+    ctl.theta += dth*0.13; ctl.phi += dph*0.13; ctl.r += dr*0.13;
+    place();
+    craf = requestAnimationFrame(camStep);
+  }
+
+  // --- transport ------------------------------------------------------------------------------
+  const secsAt = () => STEPS[Math.max(0, Math.min(N-1, Math.floor(T - 1e-9)))].secs || SECS;
+  function tick(now){
+    if (!last) last = now;
+    const dt = Math.min(0.05, (now - last)/1000); last = now;
+    const s = dt / secsAt();
+    if (Math.abs(target - T) <= s){ setT(target); halt(); return; }
+    setT(T + (target > T ? s : -s));
+    raf = requestAnimationFrame(tick);
+  }
+  function halt(){ if (raf) cancelAnimationFrame(raf); raf = 0; last = 0; paint(); }
+  function go(to){ target = Math.max(0, Math.min(N, to)); last = 0; if (!raf) raf = requestAnimationFrame(tick); }
+
+  // --- panel -------------------------------------------------------------------------------
+  const box = document.createElement('div');
+  box.className = 'ctl'; box.id = 'anim';
+  box.innerHTML =
+    '<label>Guided build <b id="a-n">—</b></label>' +
+    '<input type="range" id="a-scrub" min="0" max="' + (N*100) + '" step="1" value="' + (N*100) + '" aria-label="Build timeline">' +
+    '<p class="t" id="a-t"></p><p class="c" id="a-c"></p>' +
+    '<div class="views">' +
+      '<button id="a-prev" title="Previous step" aria-label="Previous step">‹</button>' +
+      '<button id="a-play">▶ Play</button>' +
+      '<button id="a-next" title="Next step" aria-label="Next step">›</button>' +
+      '<button id="a-all">Complete</button>' +
+    '</div>' +
+    '<label class="chk"><input type="checkbox" id="a-follow" checked> Camera follows the step</label>';
+  document.querySelector('#panel .ctl').after(box);
+
+  const $ = id => document.getElementById(id);
+  const scrub = $('a-scrub');
+
+  function paint(){
+    const i = Math.max(0, Math.min(N - 1, Math.floor(T - 1e-9)));
+    const s = STEPS[i];
+    $('a-n').textContent = (T >= N ? N : Math.min(N, i + 1)) + ' / ' + N;
+    $('a-t').textContent = s.t;
+    $('a-c').textContent = s.c;
+    if (document.activeElement !== scrub) scrub.value = Math.round(T*100);
+    $('a-prev').disabled = T <= 0;
+    $('a-next').disabled = T >= N;
+    $('a-play').textContent = (raf && target > T) ? '❚❚ Pause' : '▶ Play';
+    if (i !== lastIdx){ lastIdx = i; aim(s.v, s.r); }
+  }
+
+  $('a-prev').addEventListener('click', () => go(Math.ceil(T - 1e-6) - 1));
+  $('a-next').addEventListener('click', () => go(Math.floor(T + 1e-6) + 1));
+  $('a-all') .addEventListener('click', () => { halt(); setT(N); });
+  $('a-play').addEventListener('click', () => {
+    if (raf && target > T){ halt(); return; }
+    if (T >= N) setT(0);
+    go(N);
+  });
+  // read the slider BEFORE halt(), which repaints and would otherwise overwrite it with
+  // the position we are moving away from
+  scrub.addEventListener('input', e => { const v = +e.target.value/100; halt(); target = v; setT(v); });
+  $('a-follow').addEventListener('change', e => {
+    follow = e.target.checked;
+    if (follow) aim(STEPS[Math.max(0, Math.min(N-1, Math.floor(T - 1e-9)))].v, null);
+  });
+
+  // Orbiting hands the camera to the viewer - the animation keeps running, it just stops
+  // steering.  This is the one place we read an existing global rather than rebinding one.
+  document.getElementById('c').addEventListener('pointermove', () => {
+    if (drag && drag.moved && follow){ follow = false; $('a-follow').checked = false; want = null; }
+  });
+
+  // These three rebuild geometry or positions from base, so the timeline is re-applied after
+  // each of them.  Our listeners run after the originals, which is what makes that work.
+  $('explode').addEventListener('input', () => setT(T));
+  $('tilt').addEventListener('input', applyWires);
+  $('chk-harness').addEventListener('change', e => {
+    if (e.target.checked) manual.delete('harness'); else manual.add('harness');
+    if (e.target.checked) applyWires();
+  });
+  document.querySelectorAll('.row').forEach(row => {
+    const cb = row.querySelector('input');
+    cb.addEventListener('change', () => {
+      if (cb.checked) manual.delete(row.dataset.id); else manual.add(row.dataset.id);
+    });
+  });
+
+  setT(N);          // the page opens on the finished machine
+  lastIdx = N - 1;  // ...without the camera having been steered anywhere
+})();
+</script>

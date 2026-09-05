@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Roomba 690 · OI Control</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#161b22; --panel2:#1c232c; --line:#2a323d;
+    --tx:#e6edf3; --dim:#8b949e; --accent:#3fb950; --accent2:#58a6ff;
+    --warn:#d29922; --bad:#f85149; --key:#222b36; --keyon:#1f6feb;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+       font:14px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;
+       -webkit-user-select:none;user-select:none;overflow-x:hidden}
+  header{display:flex;align-items:center;gap:14px;padding:10px 18px;
+         border-bottom:1px solid var(--line);background:var(--panel);
+         position:sticky;top:0;z-index:10;flex-wrap:wrap}
+  h1{font-size:15px;margin:0;font-weight:600;letter-spacing:.3px}
+  .pill{padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;
+        border:1px solid var(--line);background:var(--panel2);color:var(--dim);
+        white-space:nowrap}
+  .pill.ok{color:var(--accent);border-color:#1c3a24;background:#0d1f14}
+  .pill.warn{color:var(--warn);border-color:#3d3218;background:#1f1a0d}
+  .pill.bad{color:var(--bad);border-color:#4a1f1d;background:#210f0f}
+  .spacer{flex:1}
+  main{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);
+       gap:16px;padding:16px;max-width:1180px;margin:0 auto}
+  @media(max-width:900px){main{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .card h2{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;
+           color:var(--dim);margin:0 0 12px;font-weight:600}
+
+  /* ---- key pads ---- */
+  .pads{display:flex;gap:34px;justify-content:center;flex-wrap:wrap}
+  .pad{display:grid;grid-template-columns:repeat(3,46px);
+       grid-template-rows:repeat(2,46px);gap:7px;justify-content:center}
+  .pad .lbl{grid-column:1/4;text-align:center;font-size:10px;color:var(--dim);
+            letter-spacing:1px;text-transform:uppercase;margin-top:6px}
+  .k{display:flex;align-items:center;justify-content:center;background:var(--key);
+     border:1px solid var(--line);border-radius:7px;font-size:15px;font-weight:600;
+     color:var(--dim);transition:background .045s linear,color .045s linear,
+     border-color .045s linear,transform .045s linear}
+  .k.on{background:var(--keyon);color:#fff;border-color:#4c8dff;transform:translateY(1px)}
+  .k.blank{background:transparent;border:none}
+
+  /* ---- robot diagram ---- */
+  .viz{display:flex;justify-content:center;padding:4px 0 2px}
+  svg{max-width:100%;height:auto}
+  .seg{transition:fill .05s linear,opacity .05s linear}
+
+  /* ---- telemetry ---- */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px}
+  .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+       border-bottom:1px dotted #232b35;padding:3px 0}
+  .row span:first-child{color:var(--dim);font-size:11px;text-transform:uppercase;
+                        letter-spacing:.6px}
+  .row span:last-child{font-variant-numeric:tabular-nums;font-weight:600}
+  .bar{height:7px;background:var(--panel2);border-radius:4px;overflow:hidden;
+       border:1px solid var(--line);margin-top:6px}
+  .bar>div{height:100%;background:var(--accent);transition:width .25s ease,background .25s}
+  .wheels{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px}
+  .wcell{text-align:center;background:var(--panel2);border:1px solid var(--line);
+         border-radius:8px;padding:8px}
+  .wcell b{display:block;font-size:22px;font-variant-numeric:tabular-nums;margin-top:2px}
+  .wbar{height:5px;background:#0d1117;border-radius:3px;margin-top:7px;position:relative}
+  .wbar i{position:absolute;top:0;bottom:0;left:50%;background:var(--accent2);border-radius:3px}
+
+  label.sl{display:block;margin:12px 0 2px;font-size:11px;color:var(--dim);
+           text-transform:uppercase;letter-spacing:.6px}
+  input[type=range]{width:100%;accent-color:var(--accent2)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  button{background:var(--panel2);color:var(--tx);border:1px solid var(--line);
+         border-radius:7px;padding:7px 13px;font:inherit;font-size:12px;cursor:pointer}
+  button:hover{border-color:#3d4753;background:#232c37}
+  button.danger{color:var(--bad);border-color:#4a1f1d}
+  button.danger:hover{background:#2a1210}
+  button.on{background:var(--keyon);border-color:#4c8dff;color:#fff}
+  .hint{color:var(--dim);font-size:11px;margin-top:10px;line-height:1.6}
+  .hint b{color:var(--tx);font-weight:600}
+  #banner{display:none;padding:9px 16px;background:#2a1210;color:#ffb4ae;
+          border-bottom:1px solid #4a1f1d;font-size:12px;text-align:center}
+  #banner.show{display:block}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ROOMBA 690 · OPEN INTERFACE</h1>
+  <span class="pill" id="p-link">connecting…</span>
+  <span class="pill" id="p-mode">mode —</span>
+  <span class="pill" id="p-batt">battery —</span>
+  <span class="pill" id="p-rtt">rtt —</span>
+  <span class="spacer"></span>
+  <span class="pill" id="p-frames">stream —</span>
+</header>
+<div id="banner"></div>
+
+<main>
+  <section>
+    <div class="card">
+      <h2>Controls</h2>
+      <div class="pads">
+        <div class="pad">
+          <div class="k blank"></div><div class="k" id="k-w">W</div><div class="k blank"></div>
+          <div class="k" id="k-a">A</div><div class="k" id="k-s">S</div><div class="k" id="k-d">D</div>
+          <div class="lbl">drive</div>
+        </div>
+      </div>
+
+      <div class="wheels">
+        <div class="wcell">LEFT WHEEL<b id="w-l">0</b>
+          <div class="wbar"><i id="wb-l"></i></div></div>
+        <div class="wcell">RIGHT WHEEL<b id="w-r">0</b>
+          <div class="wbar"><i id="wb-r"></i></div></div>
+      </div>
+
+      <label class="sl">Drive speed · <span id="v-speed">250</span> mm/s</label>
+      <input type="range" id="sp" min="30" max="500" step="10" value="250">
+      <label class="sl">Turn rate · <span id="v-turn">180</span> mm/s</label>
+      <input type="range" id="tn" min="30" max="500" step="10" value="180">
+
+      <div class="btns">
+        <button id="b-safe">Safe mode</button>
+        <button id="b-full">Full mode</button>
+        <button id="b-zero">Zero heading</button>
+        <button id="b-dock">Seek dock</button>
+        <button id="b-brush">Brushes</button>
+        <button class="danger" id="b-stop">■ E-STOP (space)</button>
+        <button class="danger" id="b-off">Power off</button>
+      </div>
+
+      <div class="hint">
+        <b>W/S</b> forward &amp; back · <b>A/D</b> arc while moving, spin in place when
+        stopped · <b>−/=</b> trim speed · <b>Space</b> emergency stop ·
+        <b>Shift</b> boost.<br>
+        Click the page first so it has keyboard focus. Releasing every key halts
+        the wheels; so does losing window focus or the connection.<br>
+        The robot is held in <b>Safe mode</b>, so it ignores its own buttons and
+        will not start cleaning on its own. <b>Seek dock</b> hands control back
+        to the robot deliberately.
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <h2>Robot state</h2>
+      <div class="viz">
+        <svg viewBox="0 0 240 210" width="300">
+          <!-- body -->
+          <circle cx="120" cy="112" r="84" fill="#161b22" stroke="#2a323d" stroke-width="2"/>
+          <!-- front bumper halves -->
+          <path id="bmp-l" class="seg" d="M120 112 L36 112 A84 84 0 0 1 120 28 Z"
+                fill="#1c232c" stroke="#2a323d"/>
+          <path id="bmp-r" class="seg" d="M120 112 L120 28 A84 84 0 0 1 204 112 Z"
+                fill="#1c232c" stroke="#2a323d"/>
+          <!-- light bumper arc segments -->
+          <g id="lbg" stroke="#0e1116" stroke-width="1.5"></g>
+          <circle cx="120" cy="112" r="52" fill="#0e1116" stroke="#2a323d"/>
+          <!-- heading needle: 0 deg = orientation when last zeroed, +ve clockwise -->
+          <g id="needle" transform="rotate(0 120 112)">
+            <polygon points="120,64 113,80 127,80" fill="#58a6ff"/>
+            <circle cx="120" cy="112" r="3" fill="#58a6ff"/>
+          </g>
+          <text x="120" y="112" text-anchor="middle" font-size="9" fill="#8b949e"
+                font-family="monospace">HEADING</text>
+          <text x="120" y="132" text-anchor="middle" font-size="19" fill="#e6edf3"
+                font-family="monospace" font-weight="700" id="hdg">0°</text>
+          <!-- wheels -->
+          <rect id="whl-l" x="24" y="94" width="13" height="36" rx="4" fill="#2a323d"/>
+          <rect id="whl-r" x="203" y="94" width="13" height="36" rx="4" fill="#2a323d"/>
+          <!-- cliff sensors -->
+          <circle id="clf-left"        class="seg" cx="58"  cy="62"  r="8" fill="#1c232c" stroke="#2a323d"/>
+          <circle id="clf-front-left"  class="seg" cx="94"  cy="38"  r="8" fill="#1c232c" stroke="#2a323d"/>
+          <circle id="clf-front-right" class="seg" cx="146" cy="38"  r="8" fill="#1c232c" stroke="#2a323d"/>
+          <circle id="clf-right"       class="seg" cx="182" cy="62"  r="8" fill="#1c232c" stroke="#2a323d"/>
+          <text x="120" y="205" text-anchor="middle" font-size="9" fill="#8b949e"
+                font-family="monospace">front · bumper &amp; cliff sensors</text>
+        </svg>
+      </div>
+
+      <div class="grid" style="margin-top:10px">
+        <div class="row"><span>OI mode</span><span id="t-mode">—</span></div>
+        <div class="row"><span>Charging</span><span id="t-chg">—</span></div>
+        <div class="row"><span>Voltage</span><span id="t-v">—</span></div>
+        <div class="row"><span>Current</span><span id="t-i">—</span></div>
+        <div class="row"><span>Charge</span><span id="t-mah">—</span></div>
+        <div class="row"><span>Temp</span><span id="t-temp">—</span></div>
+        <div class="row"><span>Bumpers</span><span id="t-bump">—</span></div>
+        <div class="row"><span>Wheel drop</span><span id="t-drop">—</span></div>
+        <div class="row"><span>Heading</span><span id="t-hdg">—</span></div>
+        <div class="row"><span>Distance</span><span id="t-dist">—</span></div>
+        <div class="row"><span>Encoders</span><span id="t-enc">—</span></div>
+        <div class="row"><span>Stream</span><span id="t-fr">—</span></div>
+      </div>
+      <div class="bar"><div id="battbar" style="width:0%"></div></div>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+const WS_PORT = new URLSearchParams(location.search).get("ws") || 8667;
+const DRIVE_KEYS = ["w","a","s","d"];
+const TRIM_KEYS  = ["-","="];
+
+let ws = null, connected = false;
+let down = new Set();          // physically held drive keys
+let estop = false, boost = false;
+let speed = 250, turn = 180;
+let rtt = null, lastTel = 0;
+
+const $ = id => document.getElementById(id);
+
+/* ---------------- websocket ---------------- */
+function connect(){
+  ws = new WebSocket(`ws://127.0.0.1:${WS_PORT}`);
+  ws.onopen = () => { connected = true; setPill("p-link","link up","ok"); sendKeys(); };
+  ws.onclose = () => {
+    connected = false; setPill("p-link","disconnected","bad");
+    down.clear(); paintKeys(); setTimeout(connect, 900);
+  };
+  ws.onerror = () => {};
+  ws.onmessage = ev => {
+    const m = JSON.parse(ev.data);
+    if (m.t === "pong"){ rtt = performance.now() - m.ts; return; }
+    if (m.t === "tel") paintTelemetry(m);
+  };
+}
+function send(o){ if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
+function sendKeys(){ send({t:"keys", down:[...down]}); }
+
+/* ---------------- keyboard ---------------- */
+addEventListener("keydown", e => {
+  const k = e.key.toLowerCase();
+  if (k === " " || k === "spacebar"){
+    e.preventDefault();
+    if (!e.repeat){ estop = !estop; down.clear(); send({t:"estop", on:estop});
+                    paintKeys(); paintEstop(); }
+    return;
+  }
+  if (k === "shift" && !boost){ boost = true; pushSpeed(); return; }
+  if (TRIM_KEYS.includes(k)){
+    e.preventDefault();
+    const d = (k === "=") ? 20 : -20;
+    speed = Math.max(30, Math.min(500, speed + d));
+    $("sp").value = speed; $("v-speed").textContent = speed;
+    pushSpeed(); return;
+  }
+  if (!DRIVE_KEYS.includes(k)) return;
+  e.preventDefault();
+  if (e.repeat) return;                 // OS auto-repeat carries no new info
+  if (estop){ estop = false; send({t:"estop", on:false}); paintEstop(); }
+  if (!down.has(k)){ down.add(k); sendKeys(); paintKeys(); }
+});
+
+addEventListener("keyup", e => {
+  const k = e.key.toLowerCase();
+  if (k === "shift"){ boost = false; pushSpeed(); return; }
+  if (!DRIVE_KEYS.includes(k)) return;
+  e.preventDefault();
+  if (down.delete(k)){ sendKeys(); paintKeys(); }
+});
+
+// A stuck key while the window is unfocused would drive the robot away.
+addEventListener("blur", releaseAll);
+document.addEventListener("visibilitychange", () => { if (document.hidden) releaseAll(); });
+function releaseAll(){ if (down.size){ down.clear(); sendKeys(); paintKeys(); } }
+
+function pushSpeed(){
+  const s = Math.round(speed * (boost ? 1.7 : 1));
+  const t = Math.round(turn  * (boost ? 1.4 : 1));
+  send({t:"speed", speed:Math.min(500,s), turn:Math.min(500,t)});
+}
+
+/* ---------------- painting ---------------- */
+function setPill(id, text, cls){
+  const el = $(id); el.textContent = text;
+  el.className = "pill" + (cls ? " " + cls : "");
+}
+function paintKeys(){
+  for (const k of DRIVE_KEYS){
+    const el = $("k-" + k); if (el) el.classList.toggle("on", down.has(k));
+  }
+}
+function paintEstop(){
+  $("b-stop").classList.toggle("on", estop);
+  banner(estop ? "EMERGENCY STOP ENGAGED — press Space or any drive key to release" : "");
+}
+function banner(msg){
+  const b = $("banner"); b.textContent = msg; b.classList.toggle("show", !!msg);
+}
+
+// light-bumper arc segments across the front 180°
+const LB = [["left",180,210],["front_left",210,240],["center_left",240,270],
+            ["center_right",270,300],["front_right",300,330],["right",330,360]];
+function arc(cx,cy,r0,r1,a0,a1){
+  const p = (r,a) => { const t = a*Math.PI/180;
+    return [cx + r*Math.cos(t), cy + r*Math.sin(t)]; };
+  const [x0,y0]=p(r1,a0), [x1,y1]=p(r1,a1), [x2,y2]=p(r0,a1), [x3,y3]=p(r0,a0);
+  return `M${x0} ${y0} A${r1} ${r1} 0 0 1 ${x1} ${y1} L${x2} ${y2} A${r0} ${r0} 0 0 0 ${x3} ${y3} Z`;
+}
+(function buildLB(){
+  const g = $("lbg");
+  for (const [name,a0,a1] of LB){
+    const el = document.createElementNS("http://www.w3.org/2000/svg","path");
+    el.setAttribute("d", arc(120,112,66,80,a0,a1));
+    el.setAttribute("fill", "#1c232c"); el.setAttribute("class","seg");
+    el.id = "lb-" + name; g.appendChild(el);
+  }
+})();
+
+function paintTelemetry(m){
+  lastTel = performance.now();
+  setPill("p-mode", "mode " + (m.oi_mode_name || "—"),
+          m.oi_mode_name === "safe" ? "ok" : m.oi_mode_name === "full" ? "warn" : "");
+  const pct = m.battery_pct;
+  setPill("p-batt", "battery " + (pct == null ? "—" : pct + "%"),
+          pct == null ? "" : pct < 15 ? "bad" : pct < 35 ? "warn" : "ok");
+  setPill("p-rtt", "rtt " + (rtt == null ? "—" : rtt.toFixed(1) + " ms"),
+          rtt == null ? "" : rtt < 12 ? "ok" : rtt < 40 ? "warn" : "bad");
+  setPill("p-frames", "stream " + (m.frames_ok || 0) + " ok / " + (m.frames_bad || 0) + " bad",
+          m.frames_bad > 4 ? "warn" : "ok");
+
+  $("t-mode").textContent = (m.oi_mode_name || "—") + " (raw " + m.oi_mode_raw + ")";
+  $("t-chg").textContent  = m.charging_state_name || "—";
+  $("t-v").textContent    = m.voltage_mv != null ? (m.voltage_mv/1000).toFixed(2)+" V" : "—";
+  $("t-i").textContent    = m.current_ma != null ? m.current_ma+" mA" : "—";
+  $("t-mah").textContent  = (m.charge_mah!=null&&m.capacity_mah!=null)
+                            ? m.charge_mah+"/"+m.capacity_mah+" mAh" : "—";
+  $("t-temp").textContent = m.temperature_c != null ? m.temperature_c+" °C" : "—";
+  $("t-enc").textContent  = (m.encoder_left ?? "—")+" / "+(m.encoder_right ?? "—");
+  const hd = m.heading_deg;
+  if (hd != null){
+    $("hdg").textContent   = hd.toFixed(0)+"°";
+    $("t-hdg").textContent = hd.toFixed(1)+"°";
+    $("needle").setAttribute("transform", `rotate(${hd} 120 112)`);
+  }
+  $("t-dist").textContent = m.distance_mm != null
+      ? (Math.abs(m.distance_mm) >= 1000
+          ? (m.distance_mm/1000).toFixed(2)+" m" : m.distance_mm.toFixed(0)+" mm")
+      : "—";
+  $("t-fr").textContent   = (m.frames_ok||0)+" ok, "+(m.frames_bad||0)+" bad";
+
+  const bl = m.bump_left, br = m.bump_right;
+  $("t-bump").textContent = (bl||br) ? [bl?"LEFT":null, br?"RIGHT":null].filter(Boolean).join(" + ") : "clear";
+  $("t-bump").style.color = (bl||br) ? "var(--bad)" : "var(--accent)";
+  $("bmp-l").setAttribute("fill", bl ? "#f85149" : "#1c232c");
+  $("bmp-r").setAttribute("fill", br ? "#f85149" : "#1c232c");
+
+  const dl = m.wheeldrop_left, dr = m.wheeldrop_right;
+  $("t-drop").textContent = (dl||dr) ? [dl?"LEFT":null, dr?"RIGHT":null].filter(Boolean).join(" + ") : "down";
+  $("t-drop").style.color = (dl||dr) ? "var(--warn)" : "var(--accent)";
+  $("whl-l").setAttribute("fill", dl ? "#d29922" : "#2a323d");
+  $("whl-r").setAttribute("fill", dr ? "#d29922" : "#2a323d");
+
+  const lb = m.light_bump || {};
+  for (const [name] of LB)
+    $("lb-"+name).setAttribute("fill", lb[name] ? "#58a6ff" : "#1c232c");
+
+  for (const [key,id] of [["cliff_left","clf-left"],["cliff_front_left","clf-front-left"],
+                          ["cliff_front_right","clf-front-right"],["cliff_right","clf-right"]])
+    $(id).setAttribute("fill", m[key] ? "#f85149" : "#1c232c");
+
+  const L = m.cmd_left|0, R = m.cmd_right|0;
+  $("w-l").textContent = L; $("w-r").textContent = R;
+  for (const [v,el] of [[L,$("wb-l")],[R,$("wb-r")]]){
+    const f = Math.max(-1, Math.min(1, v/500));
+    el.style.left  = (f >= 0 ? 50 : 50 + f*50) + "%";
+    el.style.width = Math.abs(f)*50 + "%";
+    el.style.background = v >= 0 ? "var(--accent2)" : "var(--warn)";
+  }
+  const bb = $("battbar");
+  bb.style.width = (pct || 0) + "%";
+  bb.style.background = pct == null ? "var(--dim)"
+      : pct < 15 ? "var(--bad)" : pct < 35 ? "var(--warn)" : "var(--accent)";
+
+  let msgs = [];
+  if (m.oi_mode_name === "passive")
+    msgs.push("Robot dropped to PASSIVE (cliff, wheel drop, or charger) — motors are inert. Click “Safe mode” to re-arm.");
+  if (pct != null && pct < 15) msgs.push("Battery " + pct + "% — dock it soon.");
+  if (m.watchdog) msgs.push("Watchdog halted the wheels (no input received).");
+  if (!estop && msgs.length) banner(msgs.join("  ·  "));
+  else if (!estop) banner("");
+}
+
+/* ---------------- ui wiring ---------------- */
+$("sp").oninput = e => { speed = +e.target.value; $("v-speed").textContent = speed; pushSpeed(); };
+$("tn").oninput = e => { turn  = +e.target.value; $("v-turn").textContent  = turn;  pushSpeed(); };
+$("b-safe").onclick = () => send({t:"mode", value:"safe"});
+$("b-full").onclick = () => { if (confirm(
+    "Full mode disables the cliff, wheel-drop and charger safety cut-outs.\n\n" +
+    "The robot WILL drive off a stair edge. Continue?")) send({t:"mode", value:"full"}); };
+$("b-zero").onclick  = () => send({t:"reset_heading"});
+$("b-dock").onclick  = () => { if (confirm(
+    "Seek dock hands control back to the robot so it can drive itself to the "
+    + "base.\n\nIt will stop being held in Safe mode. Continue?"))
+    send({t:"op", opcode:143}); };
+$("b-off").onclick = () => { if (confirm(
+    "Power the robot off?\n\nThis is the reliable way to stop it resuming a "
+    + "cleaning cycle. It still charges on the dock while off."))
+    send({t:"power_off"}); };
+let brush = false;
+$("b-brush").onclick = () => { brush = !brush;
+  send({t:"op", opcode:138, data:[brush ? 7 : 0]});
+  $("b-brush").classList.toggle("on", brush); };
+$("b-stop").onclick = () => { estop = !estop; down.clear();
+  send({t:"estop", on:estop}); paintKeys(); paintEstop(); };
+
+// heartbeat: feeds the server watchdog and measures round-trip latency
+setInterval(() => {
+  if (!connected) return;
+  send({t:"ping", ts:performance.now()});
+  send({t:"keys", down:[...down]});          // periodic resync
+  if (performance.now() - lastTel > 2000) setPill("p-link","stalled","warn");
+}, 100);
+
+connect();
+paintKeys();
+</script>
+</body>
+</html>

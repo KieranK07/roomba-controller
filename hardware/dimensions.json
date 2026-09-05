@@ -1,0 +1,704 @@
+{
+  "_about": "Single source of truth for every physical dimension in the build. Units mm, grams, degrees. Both the OpenSCAD model (via gen.py -> dims.scad) and the Three.js assembly view read this file, so they cannot disagree.",
+  "_frame": "Origin at the Roomba's centre, on the floor plane. +X right, +Y forward (towards the bumper), +Z up. Everything on the robot is placed in this frame. The dock has its own origin at the front-centre of its base plate.",
+  "roomba_690": {
+    "_source": "iRobot OI spec p.5 (Create 2 anatomy = 600-series chassis)",
+    "diameter": 329.9,
+    "height": 92.25,
+    "clean_button_diameter": 40,
+    "clean_button_center": [
+      0,
+      0
+    ],
+    "dustbin_release_center": [
+      0,
+      -120
+    ],
+    "minidin_position": [
+      118,
+      -95,
+      60
+    ],
+    "minidin_note": "rear right, beneath a snap-away guard (OI spec p.3)",
+    "wheel_track": 235,
+    "wheel_diameter": 72,
+    "caster_position": [
+      0,
+      120
+    ],
+    "screw_bosses": [
+      [
+        30,
+        127
+      ],
+      [
+        -30,
+        127
+      ],
+      [
+        109,
+        88
+      ],
+      [
+        -109,
+        88
+      ],
+      [
+        76,
+        50.46
+      ],
+      [
+        -76,
+        50.46
+      ],
+      [
+        51.82,
+        -66
+      ],
+      [
+        -51.82,
+        -66
+      ],
+      [
+        0,
+        -78
+      ],
+      [
+        113.5,
+        -78
+      ],
+      [
+        -113.5,
+        -78
+      ]
+    ],
+    "screw_bosses_note": "OI spec p.6 'Internal Screw Boss Locations', read at 2.4x zoom. Under the faceplate; take #4-40 or M3 standoffs. +Y forward.",
+    "mass_g": 3500,
+    "bumper_diameter": 348.5,
+    "height_rear": 82.94,
+    "deck_height": 82.94,
+    "_deck_note": "The top deck is flat at 82.94 over the whole body; the 92.25 figure in the OI spec is the maximum, and it is reached ONLY by the 16 x 18 mm front_ir_boss above - not by a broad raised front section, which is what this note used to claim. Raycasting the Create 2 reference CAD on a 2 mm grid puts the deck at 83.01 continuously from y -116 to y +144, with the only other departure being the Clean-button well (down to 78.02, x -25..+25, y -25..+25). The frame mounts on the deck, so it sits at 82.94.",
+    "_body_geometry_source": "GrabCAD 'iRobot iCreate 2 Reference CAD Model' (grabcad.com/library/irobot-icreate-2-reference-cad-model-1). The Create 2 is a remanufactured 600-series chassis, so the shell is the 690's. Measured 345.19 x 339.18 x 90.95 against the spec's 348.5 x 339.2 x 92.25: fore-aft exact, deck height within 0.1 mm, width 3.3 mm under. Good to a few mm, so it is the display shape while THIS TABLE stays authoritative for fit. Decimated to 25000 triangles, rotated Z-up with +Y forward, origin at the body centre on the floor.",
+    "shell_underside_measured": 10.9,
+    "_underside_note": "The Create 2 CAD puts the shell underside 10.9 mm above the floor, against the 8 mm assumed in layout.chassis_clearance. More clearance means the dock pins must reach further, so this needs the physical card-stack measurement before the pad carrier is printed.",
+    "deck_flat_y_max": 144,
+    "front_ir_boss": {
+      "center": [
+        0,
+        156
+      ],
+      "w": 16,
+      "d": 18,
+      "z_top": 90.94
+    },
+    "_front_ir_boss_note": "MEASURED off the Create 2 reference CAD by downward raycast: a 16 x 18 mm boss on the front centreline spanning y 147-165, standing at z 90.94 while the deck either side of it is 83.01. It is the ONLY thing on the whole top surface above deck level, which is what the OI spec's 92.25 mm 'height' actually measures. On a 600-series that boss is the omnidirectional dock / virtual-wall IR receiver. Treat the identification as HIGH-confidence but not proven: confirm by eye before printing the front carrier. Nothing in the frame may sit on it or forward of it, and nothing may stand in front of it below ~115 mm.",
+    "_removed_note": "top_dome_rise (4 mm) was deleted 2026-09-03. Nothing read it, and the raycast that found front_ir_boss also disproved it: the deck is flat at 83.01 from y -116 to y +144 with no dome at all. Keeping a wrong number that nothing consumes is worse than not having one."
+  },
+  "jetson_xavier_nx_devkit": {
+    "_source": "NVIDIA SP-09765-001 v1.0 fig 4-1 (PCB 100x79x1.57) and fig 4-2 (dev-kit envelope 103x90.5, 34.66 tall incl. heatsink+fan)",
+    "board_w": 100,
+    "board_d": 79,
+    "board_t": 1.57,
+    "mount_holes": [
+      [
+        3.8,
+        75.8
+      ],
+      [
+        96.4,
+        75.8
+      ],
+      [
+        3.8,
+        18.4
+      ],
+      [
+        96.4,
+        18.4
+      ]
+    ],
+    "mount_hole_d": 3.2,
+    "module_w": 69.6,
+    "module_d": 45.0,
+    "module_offset": [
+      16,
+      22
+    ],
+    "heatsink_h": 18.0,
+    "fan_d": 34.5,
+    "fan_h": 8.25,
+    "stack_height": 34.66,
+    "barrel_jack": {
+      "od": 5.5,
+      "pin": 2.5,
+      "polarity": "centre positive",
+      "v_in": [
+        9,
+        20
+      ],
+      "i_max": 3.5
+    },
+    "mass_g": 300,
+    "connector_h": 19.38,
+    "underside_h": 3.08,
+    "envelope_w": 103,
+    "envelope_d": 90.5,
+    "mount_holes_note": "outer corner holes of the 100x79 PCB, read from fig 4-1 at 2.4x zoom (+/-0.5 mm); pattern 92.6 x 57.4",
+    "module_below_pcb": 1.4,
+    "module_above_pcb": 4.2,
+    "_module_geometry_source": "NVIDIA P3668_3D_CAD_STEP_Model.stp (Jetson_Xavier_NX_Module_3D_STEP_Model_nv.zip, Creo, 2019-09-27), tessellated with gmsh. Measures 69.6 x 45.0 x 5.6 mm, confirming the 69.6 x 45 mm module footprint. The stock heatsink and fan are not in NVIDIA's file and stay as blocks.",
+    "underside_note": "3.08 mm is the component height BELOW the carrier PCB, not a socket gap (carrier spec Figure 4-1).",
+    "module_socket_gap": 6.69,
+    "stack_above_board": 30.01,
+    "_stack_note": "Verified against NVIDIA's own devkit CAD, not inferred. Carrier 100.00 x 79.00 x 1.57 and overall 103.00 x 90.50 x 34.66, both exact to the carrier board specification. Heatsink is 57.8 x 39 x 18 with the 34.5 mm fan RECESSED into its top, not stacked on it. The module PCB sits 6.69 mm above the carrier. The 103 x 90.5 x 6.5 solid in NVIDIA's file is a keep-out envelope, not a part: it interpenetrates the board by 1.6 mm, which is why the published envelope is larger than the real board.",
+    "heatsink_w": 57.8,
+    "heatsink_d": 39.0,
+    "fan_recessed": true
+  },
+  "realsense_d435i": {
+    "_source": "Intel D400 datasheet 337029-013 table 3-51 + fig 10-9",
+    "w": 90,
+    "h": 25,
+    "d": 25,
+    "mass_g": 75,
+    "mount": {
+      "m3_holes": 2,
+      "m3_spacing": 45,
+      "m3_max_insertion": 3,
+      "bolt": "M3 x 6 through a 4 mm plate",
+      "tripod": "1/4-20 UNC",
+      "torque_nm": 0.4
+    },
+    "usb": "USB-C, rear face",
+    "lens_offsets_x": [
+      -25,
+      -10,
+      10,
+      25
+    ],
+    "_geometry_source": "Intel's d435.dae from the realsense-ros package (Apache 2.0), measured 89.914 x 25.000 x 25.055 mm against the datasheet. Voxel-remeshed at 0.22 mm into watertight geometry, decimated to 6000 triangles, rescaled to Intel's exact bounding box, rotated so the lenses face +Y."
+  },
+  "ovonic_3s_8000": {
+    "_source": "Ovonic's own spec table for the 50C 8000 mAh 3S1P Deans pack (us.ovonicshop.com): 135 x 42 x 34 mm, 424 g, Deans/T discharge plug, JST-XHR-4P balance. The original Amazon ASIN B07CVDLM5R is dead on both .com and .com.au. Its live replacement B0FZJXBRHT is the HARD-case variant (model O-50C-8000-3S1P-HC-T-2P) at 141.95 x 45.25 x 34 mm / 449 g - if the pack on hand is that one, the cradle needs re-cutting. Measure before printing.",
+    "l": 135,
+    "w": 42,
+    "h": 34,
+    "corner_r": 3,
+    "mass_g": 424,
+    "chemistry": "3S LiPo",
+    "connectors": {
+      "main": "Deans T-plug",
+      "balance": "JST-XHR-4P"
+    },
+    "_amazon_hardcase_variant": [
+      141.95,
+      45.25,
+      34
+    ],
+    "design_l": 141.95,
+    "design_w": 45.25,
+    "design_h": 34,
+    "_design_note": "The CRADLE IS CUT FOR design_l/w/h, not l/w/h. l/w/h are Ovonic's soft-pack figures (135 x 42 x 34, ASIN B07CVDLM5R, now dead); design_* is the hard-case variant B0FZJXBRHT (141.95 x 45.25 x 34, 449 g) that is the only one you can still buy. Cutting for the larger envelope means either pack drops in - the soft pack simply sits with up to 7 mm of end play, taken up by the straps and a foam shim. Cutting for the smaller one would have meant a reprint if the pack on the bench turns out to be the hard case."
+  },
+  "drok_buck": {
+    "_source": "DROK B07JZ2GQJF listing: 65.6 x 40 x 25 mm with case, 59 g",
+    "l": 65.6,
+    "w": 40,
+    "h": 25,
+    "mass_g": 59
+  },
+  "bms_daier_3s": {
+    "_source": "daier B07JMY631D listing: 56 x 45 x 1.2 mm",
+    "l": 56,
+    "w": 45,
+    "t": 1.2,
+    "clearance_h": 6,
+    "mass_g": 12,
+    "balance_style": "solder_pads",
+    "_balance_note": "This SKU has NO JST-XH balance header. The balance connections are four solder pads on the board edge, labelled B-, B1, B2 and B+. Measured off the vendor's own dimensioned photo with a 4-point homography, using its printed 56/45/1.2 mm callouts as the scale.",
+    "pads": {
+      "Bminus": [
+        6.5,
+        4.9,
+        10.5,
+        11.3
+      ],
+      "B1": [
+        52.9,
+        5.1,
+        9.9,
+        11.8
+      ],
+      "Bplus": [
+        53.2,
+        42.1,
+        8.7,
+        10.8
+      ],
+      "B2": [
+        5.2,
+        41.4,
+        11.3,
+        13.1
+      ]
+    },
+    "pads_round": {
+      "Pplus": [
+        51.9,
+        28.9,
+        10.2
+      ],
+      "Pminus": [
+        51.8,
+        19.0,
+        9.4
+      ]
+    },
+    "mosfet_bank": [
+      30,
+      17,
+      22,
+      15,
+      2.0
+    ],
+    "ic_row": [
+      30,
+      40,
+      30,
+      6,
+      1.7
+    ],
+    "_pad_frame": "Origin at the B- corner, +x along the 56 mm edge, +y along the 45 mm edge. Entries are [cx, cy, w, d].",
+    "_pad_labels": "Keys are SCAD-safe: Bminus/Bplus/Pminus/Pplus are the board's B-, B+, P-, P+ pads.",
+    "current_a_cont": 25,
+    "current_a_peak": 40,
+    "_integration": "HX-3S-FL25A. Electrically a huge margin over the 1.5 A load and the 2 A charge rail, and LiPo shares Li-ion's 4.2 V/cell ceiling, so an '18650' board is correct. Mechanically it has NO connectors - six solder pads (B-, B1, B2, B+, P-, P+). Nothing on Amazon in the 3S class carries a JST-XH socket; they are all this same 18650 solder-pad family, so swapping the board does not help. The pack mates through two pigtails: Deans female (B07WHPD4KD) to B+/B-, and a MALE JST-XH 4-pin (B07TXYL61V) to the four balance pads. Load and charge both belong on P+/P- - the over-discharge cutoff only opens that port."
+  },
+  "ina219_hiletgo": {
+    "_source": "HiLetgo listing: 25.5 x 22.3 mm",
+    "l": 25.5,
+    "w": 22.3,
+    "t": 1.6,
+    "mass_g": 3
+  },
+  "fuse_holder_inline": {
+    "_source": "Vendor's own dimension graphic on the listing, not photogrammetry.",
+    "l": 45,
+    "w": 20,
+    "h": 22,
+    "mass_g": 20,
+    "cap_w": 21.8,
+    "body_len": 30.5,
+    "lead_len": 299.7,
+    "fuse_w": 19.1,
+    "fuse_h": 19.1
+  },
+  "home_base": {
+    "_source": "Envelope from three independent retail listings for the 500-900 series dock (Amazon B00LPV2KL0, Walmart 589016923, Home Depot Canada 1001539167), consistent to the mm. HIGH confidence. Note iRobot's own manual calls this the 'Compact Home Base', which is NOT the i/j-series ramp-less dock.",
+    "w": 149,
+    "d": 159,
+    "h": 114,
+    "ramp_h": 18,
+    "ramp_d": 75,
+    "stock_contact_spacing": 80,
+    "mass_g": 400,
+    "ramp_plate_t": 3,
+    "ramp_d_range": [
+      60,
+      90
+    ],
+    "ramp_h_range": [
+      15,
+      22
+    ],
+    "ramp_angle_deg": 13.5,
+    "stock_contact_spacing_range": [
+      70,
+      90
+    ],
+    "contact_setback": null,
+    "_confidence": "Envelope HIGH. Everything about the ramp is LOW: no orthogonal side photo of a docked robot exists online, so rise, depth and angle are visual-proportion reads off iRobot's 500/600 manual line art and an OEM product photo, not calibrated photogrammetry. Contact spacing is MEDIUM-LOW from mirror-symmetry measurement on two images scaled to the known 149 mm width, which gave 77 and 89 mm independently. Contact setback from the front lip is UNKNOWN. iRobot patent US7332890 was checked and rejected: its figures show the older dome-shaped dock.",
+    "_must_measure": "These feed the height of pogo pins with 2.5 mm of travel, so none of them is good enough to print from. Measure the real ramp: one level side-on photo against a ruler, plus the card-stack clearance test."
+  },
+  "pogo_p75_b1": {
+    "_source": "P75-B1 spring probe: 1.02 mm tip, ~16.5 mm body, 3 A",
+    "d": 1.02,
+    "body_d": 1.36,
+    "l": 16.5,
+    "travel": 2.5,
+    "i_max": 3,
+    "body_len": 12.9,
+    "tip_len": 3.6,
+    "_len_split": "Proportion read off a square-on product photo, applied to the given 16.5 mm total. Low confidence."
+  },
+  "contact_geometry": {
+    "_source": "docs/build-sheet.html contact geometry figure",
+    "pad_w": 35,
+    "pad_d": 20,
+    "pad_gap": 15,
+    "group_spacing": 50,
+    "pins_per_pad": 2,
+    "pin_pitch_in_group": 6,
+    "working_tolerance": 14.5,
+    "short_threshold": 29.5,
+    "pin_compression": 1.5,
+    "_pin_height_note": "Pin tips are set on assembly, not from this table: dock the robot, measure ramp surface to copper, press each pin into the block until its tip is pin_compression above that, lock with CA. P75-B1 travel is only 2.5 mm.",
+    "_BLOCKED": "The revised 75 mm ramp depth breaks the current pad placement. With the dock in its docked position the ramp spans y 99.9 to 174.9, so pads at y=100 land on the ramp's front lip where the surface height is zero and the gap to the robot's underside is the full ~11 mm. Moving the pads further up the ramp runs them into the front caster at y=120. This cannot be resolved from published data: it needs the real ramp profile and the card-stack clearance measurement. Do not print the pad carrier or the pin block until then."
+  },
+  "print": {
+    "_note": "Design rules for the printed parts",
+    "wall": 2.4,
+    "floor": 2.0,
+    "m3_clearance_d": 3.4,
+    "m3_tap_d": 2.5,
+    "m3_heatset_d": 4.0,
+    "m3_head_d": 6.0,
+    "standoff_od": 7,
+    "fit_clearance": 0.4,
+    "strap_slot": [
+      22,
+      3
+    ]
+  },
+  "layout": {
+    "_note": "Component centres in the robot frame (XY, mm). Three carriers at 0 (right, Jetson), 90 (front, camera + DROK) and 180 (left, battery). The rear is empty by design.",
+    "jetson_center": [
+      104,
+      0
+    ],
+    "jetson_rotation": 90,
+    "battery_center": [
+      -88,
+      0
+    ],
+    "battery_rotation": 90,
+    "camera_pivot": [
+      0,
+      130
+    ],
+    "camera_tilt_deg": -8,
+    "drok_center": [
+      0,
+      86
+    ],
+    "pads_center_y": 100,
+    "pads_z": 0,
+    "chassis_clearance": 8,
+    "_balance": "MEASURED by hardware/verify.py, which weighs the placed geometry rather than guessing: the payload is 988 g with its centre of mass at (-8.6, +19.1, 100.7), so the loaded robot's centre sits 1.9 mm left of the wheel centreline and 4.2 mm forward of it. The left group (cradle, pack, lid, BMS, INA219) is 491 g at x -88 and the right group (plate, Jetson) 318 g at x +109; they very nearly cancel. The previous four-arm layout put a 424 g pack on one arm against a 74 g electronics row on the other, which is the systematic wheel-load difference the odometry was reading as a heading bias. Tip threshold is unchanged at about 64 degrees.",
+    "drok_rotation": 180,
+    "carrier_angles": [
+      0,
+      90,
+      180
+    ],
+    "_drok_note": "180, not 0. ref_drok() puts the input terminals at its local +y and the outputs at -y; through the front carrier's 90 deg rotation, 0 would aim the input at the robot's -x side, 93 mm from the deck grommet, and the output at the Jetson. 180 puts the input 31 mm from the grommet where the dock-pad pair arrives and the output facing the battery, which is where both runs actually go."
+  },
+  "frame": {
+    "_note": "Low-profile carrier frame. A hub ring around the Clean button with three lap tabs; each of the three carriers is its own arm - it laps into the hub, then drops to a plate that lies FLAT ON THE ROOMBA'S DECK and bolts to two chassis screw bosses. There is no separate arm part any more, and nothing is stacked on top of an arm, which is where the old design lost its height. Everything aft of y = -38 is deliberately empty so the dust bin still comes out.",
+    "_carrier_frame": "Each carrier is drawn in its own local frame: origin at the ROBOT centre on the deck plane (z = 0 at 82.94), +X outboard along that carrier's axis, +Z up. The assembly rotates it by layout.carrier_angles. So r0/r1 are radii from the robot's centre, directly comparable to the screw-boss table, and boss_tabs are [boss_x, boss_y, anchor_x, anchor_y] in the SAME local frame - the tab is hulled from the plate edge at the anchor out to the boss.",
+    "hub": {
+      "od": 76,
+      "id": 60,
+      "t": 6,
+      "pad_w": 24,
+      "pad_r1": 53,
+      "hole_r": [
+        40,
+        49
+      ],
+      "nut_af": 5.5,
+      "nut_h": 2.4,
+      "_note": "A plain 6 mm ring with three radial pads at 0/90/180 deg. ID 60 keeps the inner edge at r 30, clear of both the 40 mm Clean button and the button well, which the raycast puts inside r 25. Each carrier tongue lies ON TOP of a pad and is bolted down with two M3; the nuts sit in hex pockets in the pad's UNDERSIDE, trapped between the hub and the Roomba's shell, so no printed thread carries the joint. The pads stop at r 53 so the Jetson's inboard connector shells, which overhang its PCB and reach r 55.9, clear the hub instead of grazing it."
+    },
+    "carrier": {
+      "plate_t": 4,
+      "tongue_w": 24,
+      "tongue_r0": 32,
+      "tongue_r1": 52,
+      "tongue_t": 4,
+      "ramp_r1": 62,
+      "boss_tab_w": 16,
+      "corner_r": 6,
+      "_note": "The tongue is a 4 mm strap lying on the hub pad (so its top is at deck + 10), then a 45 deg ramp from tongue_r1 to ramp_r1 drops to the 4 mm plate lying FLAT ON THE DECK (top at deck + 4). That 6 mm step is the whole trick: nothing rides on top of an arm."
+    },
+    "jetson": {
+      "r0": 62,
+      "r1": 148,
+      "half_w": 60,
+      "standoff_h": 6,
+      "vent": [
+        30,
+        58
+      ],
+      "boss_tabs": [
+        [
+          76,
+          50.46,
+          76,
+          50.46
+        ],
+        [
+          113.5,
+          -78,
+          110,
+          -60
+        ]
+      ],
+      "_note": "standoff_h 6. NVIDIA's own devkit CAD puts components 4.56 mm below the PCB, not the 3.08 mm the carrier board specification quotes, so 5 mm would have left 0.44 mm and 6 leaves 1.44. The board's 100 mm axis runs along robot Y with the I/O edge facing INBOARD, so the barrel jack, the USB stack and the 40-pin header all present to the open deck between the carriers instead of hanging over the rim. Bolts to the bosses at (76, 50.5) - straight through the plate, in the 10 mm strip outside the board, where the M3 cap head clears the 5 mm standoffs - and at (113.5, -78) on a short rear ear. 130 mm apart, which is what stops the plate pivoting on its tongue."
+    },
+    "battery": {
+      "r0": 62,
+      "wall": 3,
+      "floor": 2.5,
+      "wall_h": 34,
+      "lid_t": 2.5,
+      "lid_skirt": 6,
+      "strap_slot": [
+        22,
+        3
+      ],
+      "boss_tabs": [
+        [
+          109,
+          -88,
+          109,
+          -68
+        ],
+        [
+          51.82,
+          66,
+          68,
+          66
+        ]
+      ],
+      "bms_center_y": -30,
+      "ina_center_y": 30,
+      "_note": "Cut for ovonic_3s_8000.design_*, the hard-case envelope, so either pack drops in. The lid lies on the pack, is located by end skirts and clamped by the two straps, and carries the BMS and the INA219 - which puts both boards, the T-plug and all four balance leads within about 40 mm of the cells they protect. wall_h 34 is the full pack height, so the lid bears on the WALLS and not on the cells; it caps over the outside of the cradle and the two straps clamp the stack.",
+      "outer": [
+        52,
+        149
+      ],
+      "lid_lip": 2.5
+    },
+    "front": {
+      "r0": 62,
+      "r1": 144,
+      "half_w": 58,
+      "boss_tabs": [
+        [
+          127,
+          -30,
+          127,
+          -30
+        ],
+        [
+          127,
+          30,
+          127,
+          30
+        ]
+      ],
+      "drok_center_y": 86,
+      "_note": "r1 144 stops 3 mm short of the front_ir_boss at y 147 and nothing on this plate stands in front of it. The DROK sits at the inboard end, 20 mm from the deck grommet the dock-pad leads come up through."
+    },
+    "camera": {
+      "pivot_y": 130,
+      "pivot_z": 27.06,
+      "cheek_t": 4,
+      "cheek_x": 54,
+      "cheek_y": [
+        108,
+        144
+      ],
+      "cheek_top": 33.06,
+      "rocker": [
+        88,
+        24,
+        4
+      ],
+      "ear_t": 8,
+      "ear_x": 45.5,
+      "ear_top": 32.06,
+      "lock_offset": [
+        -9,
+        -13.5
+      ],
+      "lock_d": 3.4,
+      "tilt_min": -25,
+      "tilt_max": 15,
+      "tripod_clearance_d": 6.8,
+      "_note": "A friction-clamp rocker, not a mast. The pivot runs THROUGH the D435i's optical centre, so tilting does not move the camera - and the 25 mm body is the only thing above the pivot, which is why the whole bracket is 33 mm tall instead of 89. lock_offset is the clamp bolt's position in the rocker's frame relative to the pivot; sweeping it over tilt_min..tilt_max is what cuts the arc slot in the cheeks. The pivot is TWO M3 stubs, one per side, not one rod: the bracket is 116 mm across and the M3 kit stops at 30 mm. Clearance holes in the cheeks, 2.5 mm pilots in the ears. lock_offset sits 1.3 mm inside the ear on both axes: further out and the clamp bore breaks the ear's edge, further in and the arc gets too short to clamp on."
+    },
+    "_camera_height_rationale": "110 mm is the lowest the camera can sit without the robot occluding its own near field, and it is derived, not chosen. The only obstruction ahead of it is the front_ir_boss at (0, 165, 90.94). From an optical centre at (0, 142.5, 110) the grazing ray over that boss leaves at 39.7 deg below horizontal and meets the floor 132 mm ahead - a SLANT range of 172 mm, inside the D435i's own 175-195 mm Min-Z at 640x480 / 848x480, so the boss costs no usable depth at all. Off the centreline the horizon is the 83 mm body edge, grazing at 49.6 deg for a 144 mm slant, also inside Min-Z. At 105 mm the centre ray breaks even with Min-Z; at 100 mm a wedge of near floor about 27 deg wide goes blind behind the boss. Raising it further buys nothing: closer than Min-Z the camera is blind for its own reasons, and the Jetson's 126.6 mm sets the build height regardless.",
+    "dock_block": [
+      130,
+      28,
+      6
+    ],
+    "pin_hole_d": 1.6,
+    "pin_proud": 4.5,
+    "pad_carrier": [
+      120,
+      28,
+      3.5
+    ],
+    "pad_pocket_depth": 1.2,
+    "fr4_t": 1.6,
+    "ziptie_slot": [
+      4.5,
+      2.2
+    ]
+  },
+  "_vendor_cad": {
+    "_note": "Where the bought-part geometry comes from. Files in hardware/vendor-cad/.",
+    "realsense_d400_sldprt": "dev.realsenseai.com/docs/cad-files - SolidWorks parts only, no free reader on macOS. Kept for reference.",
+    "realsense_d435_dae": "github.com/IntelRealSense/realsense-ros realsense2_description/meshes/d435.dae - USED.",
+    "create_2_dae": "github.com/AutonomyLab/create_robot create_description/meshes/create_2.dae - visual only, 350 x 335 x 80 mm vs the real 348.5 x 329.9 x 92.25. NOT used for dimensions.",
+    "jetson_xavier_nx": "NVIDIA module STEP obtained 2026-09-02 and USED (hardware/mesh/). The devkit CARRIER board P3509 still has no public CAD; its geometry comes from the carrier board specification drawings.",
+    "jetson_xavier_nx_devkit": "NVIDIA P3518 devkit assembly, obtained as a CC-BY STEP re-export attached to a Printables Jetson NX case project (printables.com/model/326531). Confirmed genuine by NVIDIA internal part numbers inside the assembly (142-13509-1000-A01 carrier, 142-13668 module, WIRE_FAN_P3518, P3526 antennas). The remixer's case halves, feet and Raspberry Pi camera were stripped. NVIDIA publishes the same model behind a developer login at developer.nvidia.com/jetson-xavier-nx-developer-kit-3d-cad-step-model-p3518."
+  },
+  "dc_pigtail": {
+    "_source": "Vendor's own dimension graphic on the listing.",
+    "barrel_od": 10.0,
+    "sleeve_od": 5.5,
+    "pin_id": 2.5,
+    "shell_len": 10.8,
+    "plug_len": 32.0,
+    "cable_od": 5.0,
+    "cable_len": 300.0
+  },
+  "ports": {
+    "_source": "ESTIMATES unless a key says otherwise. Connector positions are not published for most of these parts, so they were eyeballed from product photos, the datasheet outlines and the vendor CAD in hardware/mesh/. They exist so the assembly viewer can route a plausible cable harness; do NOT drill, cut or order to them. The 3S BMS is the exception and is not repeated here: its six connections are the measured pads under bms_daier_3s.pads and bms_daier_3s.pads_round.",
+    "_frame": "[x, y, z] in mm in the OWNING PART's own local frame - the same frame docs/assembly-3d.template.html places that part's group in, with z=0 at the part's own base. The 'loom' block is the exception and is in the robot frame.",
+    "drok": {
+      "_source": "ESTIMATE. The cased DROK module is a plain 40 x 65.6 x 25 block in hardware/mesh/drok.stl; the screw terminals are not modelled. Input at the +y end, output at the -y end, positive outboard (+x).",
+      "in_plus": [
+        10,
+        33.4,
+        18
+      ],
+      "in_minus": [
+        -10,
+        33.4,
+        18
+      ],
+      "out_plus": [
+        10,
+        -33.4,
+        18
+      ],
+      "out_minus": [
+        -10,
+        -33.4,
+        18
+      ]
+    },
+    "ina219": {
+      "_source": "Header ROW GEOMETRY IS MEASURED off hardware/mesh/ina219.stl: a single 6-way 2.54 mm row on the -x edge, pin tops at z 3.26. The PIN ORDER along it is the estimate - taken as the usual HiLetgo silk, VCC/GND/SCL/SDA/VIN+/VIN-, running +y.",
+      "header_x": -8.15,
+      "header_y0": -6.775,
+      "header_pitch": 2.54,
+      "header_z": 3.26,
+      "_pin_order": "index 0..5 from header_y0 in +y: VCC, GND, SCL, SDA, VIN+, VIN-. VIN+ is the source side (BMS P+), VIN- the load side: it is a high-side shunt."
+    },
+    "lipo": {
+      "_source": "ESTIMATE. Ovonic publishes no lead geometry; the pouch is a plain rounded brick in hardware/mesh/lipo_3s.stl. Both leads leave the same short face, pack-local -x. Mind the sign: the assembly applies rotate(180) for the left carrier and then rotate(90) for the pack, so pack-local +x comes out at the robot's REAR. -x is the front - the end the cradle's lead notch is cut in and the end the lid-mounted BMS sits over, which makes the T-plug and the balance tail about 40 mm long instead of 140.",
+      "t_plus": [
+        -67.6,
+        -8,
+        17
+      ],
+      "t_minus": [
+        -67.6,
+        8,
+        17
+      ],
+      "balance_first": [
+        -67.6,
+        -3.75,
+        6
+      ],
+      "balance_pitch": 2.5,
+      "_balance_note": "four wires from balance_first stepping +y by balance_pitch: B-, B1, B2, B+ in cell order."
+    },
+    "jetson": {
+      "_source": "The I/O EDGE IS MEASURED off hardware/mesh/jetson_devkit_board.stl (NVIDIA's own devkit CAD): the connector faces stand at local y 38.8 and the shells rise to z 24.2. WHICH connector is which, and the 40-pin header position, are ESTIMATES - the barrel jack is taken to be the 9 mm wide, 11 mm tall shell at x -39..-30, the USB 3.1 stack the 18 mm wide, 15 mm tall block at x 9..27, and the 40-pin header is placed on the opposite (rear) edge, which is where it sits on the real P3518, but its position along that edge was not readable from the CAD.",
+      "barrel": [
+        -34.5,
+        41.5,
+        7
+      ],
+      "barrel_neg": [
+        -34.5,
+        43.5,
+        3.5
+      ],
+      "_barrel_note": "one 5.5 x 2.5 mm plug; barrel_neg is only the second conductor of the same pigtail, drawn separately so the return is visible.",
+      "usb_upper": [
+        15,
+        41,
+        14
+      ],
+      "usb_lower": [
+        15,
+        41,
+        6
+      ],
+      "header_pin1": [
+        -38,
+        -37.3,
+        10
+      ],
+      "header_pitch": 2.54,
+      "header_row_gap": 2.54,
+      "_header_note": "pin 1 at header_pin1, odd pins in that row, even pins +y by header_row_gap, pairs stepping +x by header_pitch. The harness uses 17 (3V3), 25 (GND), 27 (SDA) and 28 (SCL)."
+    },
+    "camera": {
+      "_source": "ESTIMATE. The datasheet gives 'USB-C, rear face' and nothing more; Intel's mesh has no connector. Placed toward the +x end of the rear face.",
+      "usb_c": [
+        28,
+        -13.5,
+        -2
+      ]
+    },
+    "pad_carrier": {
+      "_source": "ESTIMATE. Where the two dock-pad leads are soldered to the copper-clad pads and leave the carrier's upper face. The pads themselves are contact_geometry.",
+      "lead_plus": [
+        25,
+        -11,
+        3.6
+      ],
+      "lead_minus": [
+        -25,
+        -11,
+        3.6
+      ]
+    },
+    "loom": {
+      "_source": "ESTIMATE. Robot-frame tie-down points for the parts of the harness that are not attached to any board. Everything else about the routing lives in the viewer.",
+      "_frame": "robot frame, mm: origin at the Roomba's centre on the floor, +Y forward, +Z up.",
+      "deck_grommet": [
+        46,
+        48,
+        82.94
+      ],
+      "_deck_grommet_note": "the ONLY hole through the Roomba's shell: the two dock-pad leads run up from the underside carrier through a drilled grommet here. It sits in the open wedge of deck between the hub (r 38), the front carrier (y >= 58) and the Jetson plate (x >= 58), so no printed part has to be lifted to reach it, and it is 20 mm from the DROK's input terminals. Nothing is known about what is under the shell at this point - look before drilling.",
+      "fuse_mount": [
+        -40,
+        -58,
+        86
+      ],
+      "switch_mount": [
+        0,
+        -62,
+        86
+      ],
+      "_switch_note": "Both hang on their own leads on the empty rear deck, which in this layout carries no printed part at all. Order matters and it reversed with the layout: the load now flows from the INA219 on the LEFT lid to the Jetson on the RIGHT, so the fuse sits outboard at x -40, nearest the source, and the switch at centre-rear where a fingertip finds it. The old coordinates had them the other way round and left the whole INA-to-switch leg unfused.",
+      "camera_lane": [
+        40,
+        100
+      ],
+      "_camera_lane_note": "x,y where the D435i's USB-C run leaves the camera cheek and turns aft across the front plate towards the Jetson's inboard I/O edge."
+    }
+  }
+}

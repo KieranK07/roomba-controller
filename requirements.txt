@@ -1,0 +1,16 @@
+# Runtime controller (server.py, drive_tui.py, probe.py) needs only these two:
+pyserial==3.5
+websockets==17.1
+
+# The hardware/ model pipeline (gen.py, export_assembly.py, verify.py,
+# build_viewer.py) additionally needs these. Skip them if you only want to
+# drive the robot.
+numpy==2.5.2
+scipy==1.18.1
+trimesh==5.1.0
+shapely==2.1.2
+manifold3d==3.5.2
+pillow==12.3.0
+scikit-image==0.26.0
+networkx==3.6.1
+rtree==1.4.1
