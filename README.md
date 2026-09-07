@@ -121,6 +121,10 @@ and an Intel RealSense on top of the robot. `hardware/dimensions.json` is the
 single source of truth for every physical dimension; both the OpenSCAD model and
 the Three.js viewer read it, so they can't disagree.
 
+![Exploded view of the mount: battery cradle, camera rocker mast and Jetson plate lifted off the hub](hardware/preview/assembly_exploded.png)
+
+![Top-down view of the mount's three arms -- camera rocker mast, Jetson plate and battery cradle -- around the central hub](hardware/preview/assembly_top.png)
+
 - `gen.py` writes `dims.scad`, which `roomba_nx.scad` includes. Export a part
   with `openscad -D 'part="hub"' -o stl/hub.stl roomba_nx.scad` (parts: hub,
   jetson_plate, front_plate, camera_rocker, battery_cradle, battery_lid,
