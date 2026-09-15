@@ -132,7 +132,15 @@ class RoombaOI:
         for _ in range(3):
             self._ser.reset_input_buffer()
             self._write(bytes([P.SENSORS, P.NAME_TO_ID["oi_mode"]]))
-            d = self._ser.read(1)
+            try:
+                d = self._ser.read(1)
+            except serial.SerialException:
+                # A sleeping robot leaves the line idle, and macOS answers a
+                # readable-but-empty port by RAISING rather than returning b"".
+                # That is the same "no answer" this loop already handles below,
+                # so swallow it -- letting it propagate kills the wait-for-CLEAN
+                # loop in server.py, which exists precisely for this case.
+                d = b""
             if d:
                 raw = d[0]
                 break
