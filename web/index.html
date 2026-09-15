@@ -79,6 +79,8 @@
   button.on{background:var(--keyon);border-color:#4c8dff;color:#fff}
   .hint{color:var(--dim);font-size:11px;margin-top:10px;line-height:1.6}
   .hint b{color:var(--tx);font-weight:600}
+  body.nolink main{opacity:.45;filter:saturate(.3)}
+  body.nolink #banner{background:#2a2410;color:#ffe3a6}
   #banner{display:none;padding:9px 16px;background:#2a1210;color:#ffb4ae;
           border-bottom:1px solid #4a1f1d;font-size:12px;text-align:center}
   #banner.show{display:block}
@@ -217,7 +219,10 @@ const $ = id => document.getElementById(id);
 /* ---------------- websocket ---------------- */
 function connect(){
   ws = new WebSocket(`ws://127.0.0.1:${WS_PORT}`);
-  ws.onopen = () => { connected = true; setPill("p-link","link up","ok"); sendKeys(); };
+  ws.onopen = () => { connected = true;
+    // The socket being up says nothing about the robot -- it may well be
+    // asleep. paintTelemetry decides between "link up" and "not connected".
+    setPill("p-link","waiting for robot","warn"); sendKeys(); };
   ws.onclose = () => {
     connected = false; setPill("p-link","disconnected","bad");
     down.clear(); paintKeys(); setTimeout(connect, 900);
@@ -314,6 +319,9 @@ function arc(cx,cy,r0,r1,a0,a1){
 
 function paintTelemetry(m){
   lastTel = performance.now();
+  const live = m.link !== false;        // absent on older servers -> assume live
+  setPill("p-link", live ? "link up" : "robot not connected", live ? "ok" : "warn");
+  document.body.classList.toggle("nolink", !live);
   setPill("p-mode", "mode " + (m.oi_mode_name || "—"),
           m.oi_mode_name === "safe" ? "ok" : m.oi_mode_name === "full" ? "warn" : "");
   const pct = m.battery_pct;
@@ -378,10 +386,16 @@ function paintTelemetry(m){
       : pct < 15 ? "var(--bad)" : pct < 35 ? "var(--warn)" : "var(--accent)";
 
   let msgs = [];
+  if (!live){
+    // Everything below reads stale sensor values, so none of it is worth
+    // saying while the robot is not answering.
+    msgs.push("ROBOT NOT CONNECTED — press the CLEAN button on the Roomba to wake it. The server is up and will reconnect on its own.");
+  } else {
   if (m.oi_mode_name === "passive")
     msgs.push("Robot dropped to PASSIVE (cliff, wheel drop, or charger) — motors are inert. Click “Safe mode” to re-arm.");
   if (pct != null && pct < 15) msgs.push("Battery " + pct + "% — dock it soon.");
   if (m.watchdog) msgs.push("Watchdog halted the wheels (no input received).");
+  }
   if (!estop && msgs.length) banner(msgs.join("  ·  "));
   else if (!estop) banner("");
 }
