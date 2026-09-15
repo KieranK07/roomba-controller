@@ -101,8 +101,33 @@ back. Use `--park passive` to leave it awake in Passive on exit instead.
   tab, a crashed browser, Wi-Fi dropping, or the process being killed (SIGTERM
   and SIGHUP are handled so cleanup still runs).
 - Releasing keys, losing window focus, or disconnecting all halt the wheels.
+- **E-stop halts everything**, `Seek dock` and the brush toggle included. It used
+  to gate only the drive path, so a latched e-stop still let those two through.
 - On exit the robot is parked back in Passive -- Safe/Full never sleep and stop
   charging, which deep-discharges the battery on the dock.
+
+### What can talk to the robot
+
+- **The control socket only accepts the UI this server hosts.** WebSockets are
+  exempt from the same-origin policy, so without this check any page you happen
+  to have open could connect to `ws://127.0.0.1:8667` and drive the robot --
+  binding to localhost is no defence when the attacker's JavaScript is already
+  running on your machine. Refused handshakes are printed with the Origin that
+  was rejected. If you reach the UI under a name the server can't guess, add it:
+  `--allow-origin http://roomba.local:8666` (repeatable).
+- **Five OI opcodes reach the serial link**, and no others: dock, clean, spot,
+  max, and the brush/vacuum bit field, each with its payload length and valid
+  bits checked. The raw-opcode path used to forward whatever the client sent,
+  which included the opcodes that change the baud rate, factory-reset the robot,
+  or drive the wheels straight past the limits in `mixer.py`.
+- Clients that send no `Origin` at all (curl, a script on the Jetson) are still
+  allowed -- browsers always send one, so this doesn't reopen the hole above. It
+  leaves exactly the unauthenticated-LAN exposure `--host 0.0.0.0` warns about.
+- `tests/test_safety_gates.py` covers all three gates against a stub robot, no
+  hardware needed: `python tests/test_safety_gates.py`.
+
+**Not yet implemented:** the 10.5 V low-voltage cutoff for the LiPo. The battery
+figure in the UI is the Roomba's own NiMH pack, not the LiPo feeding the Jetson.
 
 ## Heading
 

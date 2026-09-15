@@ -23,3 +23,6 @@ docs/*.pdf
 docs/drawings/
 docs/realsense_d400.txt
 docs/xavier_nx_carrier.txt
+
+# Print package built from hardware/stl/ (generated, see hardware/print README in the zip)
+hardware/roomba-nx-printed-parts.zip
