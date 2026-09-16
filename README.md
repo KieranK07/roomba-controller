@@ -163,6 +163,13 @@ the Three.js viewer read it, so they can't disagree.
   `docs/assembly-3d.html`, an interactive Three.js view. Renders of the current
   design are in `hardware/preview/`.
 
+**`camera_rocker` is three separate pieces, not one.** The part exports as a
+strap (24.0 x 88.0 x 4.0) and two arms (24.0 x 8.0 x 21.5) with a 1.5 mm gap
+between them; the D435i and its screws are what join them on assembly. It is a
+single `part=` name and `verify.py` measures it as one payload, so nothing is
+wrong -- but a slicer will lay out three objects, and each arm is an unsupported
+21.5 mm tower on an 8 x 24 mm footprint, so give them a brim.
+
 Change a number in the JSON, rerun `gen.py`, re-export the affected STLs, run
 `verify.py`, then rerun `build_viewer.py`.
 

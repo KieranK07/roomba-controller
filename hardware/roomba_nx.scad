@@ -59,8 +59,12 @@ CRAD_X = frame_battery_r0 + CRAD_W/2;   // 88: outboard centre of the cradle
 
 module m3(h, d = M3) { cylinder(h = h, d = d); }
 
-module slot(len, w, h) {                 // stadium along X, centred
-  hull() for (x = [-len/2 + w/2, len/2 - w/2]) translate([x, 0, 0]) cylinder(h = h, d = w);
+// A stadium along X, centred.  Written as waist + two end caps rather than hull() of the caps:
+// the two forms are identical by construction, but FreeCAD's importCSG turns every hull() into a
+// mesh, so a hulled stadium exports to STEP as facets instead of two cylinders and a box.
+module slot(len, w, h) {
+  for (x = [-len/2 + w/2, len/2 - w/2]) translate([x, 0, 0]) cylinder(h = h, d = w);
+  translate([-(len - w)/2, -w/2, 0]) cube([len - w, w, h]);
 }
 
 module ziptie_pair(gap, len = 40) {      // two slots either side of a footprint, cut right through
@@ -74,11 +78,31 @@ module wall_at(s, x0, t, size_x, size_z, z0 = 0) {
   translate([0, s > 0 ? x0 : -x0 - t, z0]) cube([size_x, t, size_z]);
 }
 
+// Same deal as slot(): the four corner pillars plus the two cross slabs that span between them are
+// exactly the hull of those pillars, and unlike a hull() they survive the CSG -> STEP trip as four
+// cylinders and two boxes.  This is the base primitive of nearly every part, so it matters most.
 module rounded_box(size, r) {
-  hull() for (x = [r, size[0]-r], y = [r, size[1]-r])
-    translate([x, y, 0]) cylinder(h = size[2], r = r);
+  for (x = [r, size[0]-r], y = [r, size[1]-r]) translate([x, y, 0]) cylinder(h = size[2], r = r);
+  translate([0, r, 0]) cube([size[0],       size[1] - 2*r, size[2]]);
+  translate([r, 0, 0]) cube([size[0] - 2*r, size[1],       size[2]]);
 }
 module rounded_box_c(size, r) { translate([-size[0]/2, -size[1]/2, 0]) rounded_box(size, r); }
+
+// A prism along +Y: the XZ outline `pts`, given counter-clockwise in (x, z), t deep, starting at
+// y = y0.  Both ramps in this file are a hull() of two thin slabs that share a Y extent, so each is
+// really a prism over a fixed polygon - all flat faces, no curvature, so an explicit polyhedron is
+// EXACT, not an approximation.  Spelled as a polyhedron rather than linear_extrude(polygon()) on
+// purpose: FreeCAD's importCSG turns a polyhedron straight into planar B-rep faces, whereas it
+// turns linear_extrude into a parametric feature it then fails to evaluate inside a nested tree.
+// Faces are wound so the right-hand normal points inward, which is what polyhedron() asks for.
+module prism_y(pts, y0, t) {
+  n = len(pts);
+  polyhedron(points = concat([for (p = pts) [p[0], y0,     p[1]]],
+                             [for (p = pts) [p[0], y0 + t, p[1]]]),
+             faces  = concat([[for (i = [n - 1 : -1 : 0]) i]],                 // the y0 cap
+                             [[for (i = [n : 2*n - 1]) i]],                    // the y0 + t cap
+                             [for (i = [0 : n - 1]) [i, (i+1)%n, n + (i+1)%n, n + i]]));
+}
 
 // ================================================================= PRINTED ==
 
@@ -107,22 +131,31 @@ module carrier_tongue() {
   difference() {
     union() {
       translate([TR0, -TW/2, HT]) cube([TR1 - TR0, TW, TT]);
-      hull() {                                                       // ramp, hub level -> deck level
-        translate([TR1 - E, -TW/2, HT]) cube([E, TW, TT]);
-        translate([RR1 - E, -TW/2, 0])  cube([E, TW, PT]);
-      }
+      // Ramp, hub level -> deck level.  Was hull() of an E-wide slab at [TR1, HT..HT+TT] and one at
+      // [RR1, 0..PT]; that hull is exactly this hexagon swept the tongue's width.  The two E-long
+      // steps are not slop: they are the back faces of those slabs, and the hull kept them too.
+      prism_y([[RR1, 0], [RR1, PT], [TR1, HT + TT], [TR1 - E, HT + TT], [TR1 - E, HT], [RR1 - E, 0]],
+              -TW/2, TW);
     }
     for (r = frame_hub_hole_r) translate([r, 0, HT - E]) m3(TT + 2*E);
   }
 }
 
 // --- a diagonal ear from the plate edge out to a chassis screw boss.  t = [bx, by, ax, ay]. --
+// An obround: the two end discs plus the w-wide bar between their centres, laid along the tab's own
+// angle.  Same shape as hull() of the two discs, but analytic, so it exports as cylinders and a box.
+// Several tabs have both ends at the same point (the ear IS the boss); those are a single disc.
 module boss_tab(t) {
   w = frame_carrier_boss_tab_w;
+  L = norm([t[2] - t[0], t[3] - t[1]]);          // centre distance
   difference() {
-    hull() {
+    union() {
       translate([t[0], t[1], 0]) cylinder(h = PT, d = w);
-      translate([t[2], t[3], 0]) cylinder(h = PT, d = w);
+      if (L > 0) {
+        translate([t[2], t[3], 0]) cylinder(h = PT, d = w);
+        translate([t[0], t[1], 0]) rotate(atan2(t[3] - t[1], t[2] - t[0]))
+          translate([0, -w/2, 0]) cube([L, w, PT]);
+      }
     }
     translate([t[0], t[1], -E]) m3(PT + 2*E);
   }
@@ -217,10 +250,13 @@ module front_plate() {
       translate([r0, -hw, 0]) rounded_box([r1 - r0, 2*hw, PT], 10);
       for (s = [-1, 1]) translate([cy[0], 0, 0])                          // the two cheeks
         wall_at(s, cx, ct, cy[1] - cy[0], frame_camera_cheek_top);
-      for (s = [-1, 1]) hull() {                                          // gusset behind each cheek
-        translate([cy[0], 0, 0]) wall_at(s, cx, ct, E, frame_camera_cheek_top - 8);
-        translate([cy[0] - 22, 0, 0]) wall_at(s, cx, ct, E, PT);
-      }
+      // Gusset behind each cheek.  Was hull() of two E-wide slivers of wall_at at the same |y|;
+      // that hull is exactly this pentagon swept the cheek's thickness, and prism_y keeps it
+      // analytic.  The lone E step at the top is the back face of the tall sliver, as before.
+      for (s = [-1, 1])
+        prism_y([[cy[0] - 22, 0], [cy[0] + E, 0], [cy[0] + E, frame_camera_cheek_top - 8],
+                 [cy[0], frame_camera_cheek_top - 8], [cy[0] - 22, PT]],
+                s > 0 ? cx : -cx - ct, ct);
     }
     translate([frame_front_drok_center_y, 0, 0]) ziptie_pair(drok_buck_w + 6);
     boss_holes(frame_front_boss_tabs);
@@ -266,7 +302,13 @@ module camera_rocker() {
 module dock_pin_block() {
   b = frame_dock_block; gs = contact_geometry_group_spacing; pp = contact_geometry_pin_pitch_in_group;
   difference() {
-    hull() {                                                              // 45-degree lead-ins
+    // 45-degree lead-ins.  This one stays a hull(), on purpose.  It is a loft between two rounded
+    // rectangles of different depth: X and the corner radius are constant, but each corner's centre
+    // slides in Y as z rises, so the corner surfaces are OBLIQUE cylinders.  No OpenSCAD primitive
+    // makes one (a tilted cylinder has elliptical horizontal sections, not circular; a scaled
+    // linear_extrude would shrink X and the radius too), and a sheared multmatrix is silently
+    // dropped by FreeCAD's importCSG.  So this part alone still exports to STEP as a mesh.
+    hull() {
       rounded_box_c([b[0], b[1], E], 3);
       rounded_box_c([b[0], b[1] - 2*b[2], b[2]], 3);
     }
