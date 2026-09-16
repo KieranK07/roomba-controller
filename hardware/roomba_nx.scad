@@ -307,7 +307,13 @@ module dock_pin_block() {
     // slides in Y as z rises, so the corner surfaces are OBLIQUE cylinders.  No OpenSCAD primitive
     // makes one (a tilted cylinder has elliptical horizontal sections, not circular; a scaled
     // linear_extrude would shrink X and the radius too), and a sheared multmatrix is silently
-    // dropped by FreeCAD's importCSG.  So this part alone still exports to STEP as a mesh.
+    // dropped by FreeCAD's importCSG.  So this is the one part whose STEP is NOT imported from
+    // this file: export_step.py builds it directly in OpenCASCADE, where an oblique cylinder is a
+    // surface of linear extrusion and comes out exact.  The two are checked against each other to
+    // 0.003 mm, which is just this file's $fn = 72 corners.  This hull() remains the source of
+    // truth for the printed part, so change it here and the STEP follows - but read the note in
+    // export_step.py first, because the E-thick lower slab is load-bearing: it holds the outline
+    // at full width up to z = E, so the lead-in rises over b[2] - E and is 45.05 deg, not 45.
     hull() {
       rounded_box_c([b[0], b[1], E], 3);
       rounded_box_c([b[0], b[1] - 2*b[2], b[2]], 3);
