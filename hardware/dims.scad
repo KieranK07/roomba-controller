@@ -25,6 +25,31 @@ roomba_690_front_ir_boss_w = 16;
 roomba_690_front_ir_boss_d = 18;
 roomba_690_front_ir_boss_z_top = 90.94;
 
+// ---- deck_measured ----
+deck_measured_flat_r = 135.255;
+deck_measured_ring_r1 = 144.4244;
+deck_measured_ring_h = 3.302;
+deck_measured_screw_a = [-108.7, 87.5];
+deck_measured_screw_a_h = 3.34;
+deck_measured_screw_a_berth = 2.54;
+deck_measured_limits_on_deck_r_max = 134.255;
+deck_measured_limits_over_ring_underside_min = 3.802;
+deck_measured_limits_rear_r_max = 150.495;
+deck_measured_limits_front_r_max = 144.4244;
+deck_measured_hub_od = 86.36;
+deck_measured_hub_id = 59.944;
+deck_measured_hub_top_h = 3.26;
+deck_measured_hub_side_pad_w = 23.9394;
+deck_measured_hub_side_pad_r1 = 52.8574;
+deck_measured_hub_front_pad_w = 23.876;
+deck_measured_hub_front_pad_r1 = 53.34;
+deck_measured_hub_pad_angles = [0, 90, 180];
+deck_measured_hub_hole_d = 3.302;
+deck_measured_hub_hole_r = [40, 49];
+deck_measured_hub_mount_holes_r = 36.576;
+deck_measured_hub_mount_holes_angles = [45, 135, 225, 315];
+deck_measured_hub_mount_hole_d = 3.4;
+
 // ---- jetson_xavier_nx_devkit ----
 jetson_xavier_nx_devkit_board_w = 100;
 jetson_xavier_nx_devkit_board_d = 79;
@@ -81,9 +106,9 @@ ovonic_3s_8000_mass_g = 424;
 ovonic_3s_8000_chemistry = "3S LiPo";
 ovonic_3s_8000_connectors_main = "Deans T-plug";
 ovonic_3s_8000_connectors_balance = "JST-XHR-4P";
-ovonic_3s_8000_design_l = 141.95;
-ovonic_3s_8000_design_w = 45.25;
-ovonic_3s_8000_design_h = 34;
+ovonic_3s_8000_design_l = 147.32;
+ovonic_3s_8000_design_w = 34.646;
+ovonic_3s_8000_design_h = 42.329;
 
 // ---- drok_buck ----
 drok_buck_l = 65.6;
