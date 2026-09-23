@@ -94,6 +94,64 @@
     "_front_ir_boss_note": "MEASURED off the Create 2 reference CAD by downward raycast: a 16 x 18 mm boss on the front centreline spanning y 147-165, standing at z 90.94 while the deck either side of it is 83.01. It is the ONLY thing on the whole top surface above deck level, which is what the OI spec's 92.25 mm 'height' actually measures. On a 600-series that boss is the omnidirectional dock / virtual-wall IR receiver. Treat the identification as HIGH-confidence but not proven: confirm by eye before printing the front carrier. Nothing in the frame may sit on it or forward of it, and nothing may stand in front of it below ~115 mm.",
     "_removed_note": "top_dome_rise (4 mm) was deleted 2026-09-03. Nothing read it, and the raycast that found front_ir_boss also disproved it: the deck is flat at 83.01 from y -116 to y +144 with no dome at all. Keeping a wrong number that nothing consumes is worse than not having one."
   },
+  "deck_measured": {
+    "_source": "MEASURED on Kieran's own 690, 2026-09-22: hardware/reference/roomba_top_deck.step (SolidWorks, modelled by his CAD person from the physical robot, faceplate off) plus the hand sheet IMG_4138. Supersedes the Create 2 CAD for everything on the top deck. The STEP is inches, Y-up, with model -Z = robot FRONT and model +X = robot RIGHT; robot frame = (x, -z, DECK + y).",
+    "_heights": "Every height here is ABOVE the deck flat (point C on the sheet = 0), i.e. add roomba_690.deck_height for the robot frame.",
+    "flat_r": 135.255,
+    "_flat_note": "The deck is flat at C level from the centre out to this radius, on every side. Nothing else stands on it.",
+    "ring_r1": 144.4244,
+    "ring_h": 3.302,
+    "_ring_note": "A raised annulus from flat_r to ring_r1, 0.13 in tall. Kieran's '5.34 in' is this ring's RADIUS (5.325 in), not a diameter. Beyond ring_r1 is the bumper, which MOVES - nothing may touch it.",
+    "screw_a": [
+      -108.7,
+      87.5
+    ],
+    "screw_a_h": 3.34,
+    "screw_a_berth": 2.54,
+    "_screw_a_note": "Point A on the sheet: an elevated screw hole ON the raised ring (r 139.5), 0.1315 in above C. Keep 0.1 in clear. Position is an ESTIMATE to about 1 mm: solved from B = outer cradle-side hub hole (-49, 0) and the sheet's A-B 105.9 / A-C 163.1 / B-C 65.0 mm, oriented by the old Create-CAD boss it matches. Its height is within 0.04 mm of the ring, so ring clearance already covers it vertically.",
+    "limits": {
+      "_note": "Kieran, 2026-09-22: 'keep parts either within the ring or, they can bump up and move about 0.6 inch outward, whereupon they should not proceed much further, especially in the top hemisphere (because of the bumpers)'. Encoded conservatively: the 0.6 in is taken from the ring's INNER edge, and the front half is held to the ring's outer edge. Loosen here if he says otherwise.",
+      "on_deck_r_max": 134.255,
+      "_on_deck": "Anything resting on the flat stays 1 mm inside flat_r.",
+      "over_ring_underside_min": 3.802,
+      "_over_ring": "Anything past on_deck_r_max must have its underside at least this far above the deck: ring_h plus 0.5 mm.",
+      "rear_r_max": 150.495,
+      "_rear": "Behind the robot's centre (y < 0): flat_r + 0.6 in.",
+      "front_r_max": 144.4244,
+      "_front": "In front of the centre (y >= 0): no further than the ring's outer edge - the bumper is right there."
+    },
+    "hub": {
+      "_source": "Kieran's hub, as modelled in roomba_top_deck.step: the ring widened from 76 to 86.36 OD so the Roomba mounting holes fit. It is HIS part - reproduce it, do not redesign it.",
+      "od": 86.36,
+      "id": 59.944,
+      "top_h": 3.26,
+      "_top_h": "Top face 0.1285 in above C - sheet point B was measured on it. The STEP draws the hub as a 3.26 mm plate standing on the flat; whether the printed part is really that thin or sits lower in the bay is NOT confirmed.",
+      "side_pad_w": 23.9394,
+      "side_pad_r1": 52.8574,
+      "front_pad_w": 23.876,
+      "front_pad_r1": 53.34,
+      "pad_angles": [
+        0,
+        90,
+        180
+      ],
+      "hole_d": 3.302,
+      "hole_r": [
+        40,
+        49
+      ],
+      "_holes": "Two per pad - the carrier bolts. Carriers attach ONLY here.",
+      "mount_holes_r": 36.576,
+      "mount_holes_angles": [
+        45,
+        135,
+        225,
+        315
+      ],
+      "mount_hole_d": 3.4,
+      "_mount_holes": "ESTIMATE, placeholder until Kieran's CAD person models them: the four holes drilled through the hub into the Roomba. Put mid-ring (between id and od) on the diagonals, clear of the three pads. The ONLY attachment between the whole frame and the robot."
+    }
+  },
   "jetson_xavier_nx_devkit": {
     "_source": "NVIDIA SP-09765-001 v1.0 fig 4-1 (PCB 100x79x1.57) and fig 4-2 (dev-kit envelope 103x90.5, 34.66 tall incl. heatsink+fan)",
     "board_w": 100,
@@ -195,10 +253,11 @@
       45.25,
       34
     ],
-    "design_l": 141.95,
-    "design_w": 45.25,
-    "design_h": 34,
-    "_design_note": "The CRADLE IS CUT FOR design_l/w/h, not l/w/h. l/w/h are Ovonic's soft-pack figures (135 x 42 x 34, ASIN B07CVDLM5R, now dead); design_* is the hard-case variant B0FZJXBRHT (141.95 x 45.25 x 34, 449 g) that is the only one you can still buy. Cutting for the larger envelope means either pack drops in - the soft pack simply sits with up to 7 mm of end play, taken up by the straps and a foam shim. Cutting for the smaller one would have meant a reprint if the pack on the bench turns out to be the hard case."
+    "design_l": 147.32,
+    "design_w": 34.646,
+    "design_h": 42.329,
+    "_design_note": "The CRADLE IS CUT FOR design_l/w/h, not l/w/h. l/w/h are Ovonic's soft-pack figures (135 x 42 x 34, ASIN B07CVDLM5R, now dead); design_* is the hard-case variant B0FZJXBRHT (141.95 x 45.25 x 34, 449 g) that is the only one you can still buy. Cutting for the larger envelope means either pack drops in - the soft pack simply sits with up to 7 mm of end play, taken up by the straps and a foam shim. Cutting for the smaller one would have meant a reprint if the pack on the bench turns out to be the hard case.",
+    "_design_note_2026_09_22": "design_l/w/h are now Kieran's measured envelope of the pack he OWNS, padding included (5.8 x 1.364 x 1.6665 in). Stands 42.3 TALL (w 34.6 across the cradle). Cut the pocket to exactly this - the padding is already in it."
   },
   "drok_buck": {
     "_source": "DROK B07JZ2GQJF listing: 65.6 x 40 x 25 mm with case, 59 g",
