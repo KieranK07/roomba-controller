@@ -19,6 +19,8 @@ Drop the .zip in here as-is. No need to extract.
 ## 2. Photogrammetry (the parts nobody publishes)
 
 Only two things need scanning: the **Roomba 690** and the **Home Base**.
+(The Roomba's *top deck* is now covered by the measured STEP below; a scan is
+still what the underside and the dock need.)
 Everything else is either vendor CAD or a rectangular box that calipers settle
 in ten seconds.
 
@@ -54,9 +56,17 @@ Do these with calipers or a ruler and just write the numbers in a text file:
 
 ## What is already here
 
+- `hardware/reference/roomba_top_deck.step` — the **measured** top deck of the
+  real 690 plus Kieran's hub, modelled by his CAD person (2026-09-22). This is
+  now the placement source (`deck_measured` in `dimensions.json`); it covers the
+  deck out to r 144.42 and nothing below it. Still to model in it: the hub's four
+  mount holes into the Roomba, which are an estimate until then.
 - `hardware/vendor-cad/` — RealSense D400 CAD from Intel (SolidWorks .SLDPRT,
   not readable on this Mac), Intel's own `d435.dae` ROS mesh (usable, verified
   89.91 x 25.00 x 25.05 mm against the datasheet), and a Create 2 body mesh
-  from the AutonomyLab ROS driver (visual only, off by ~12 mm in height).
+  from the AutonomyLab ROS driver (visual only, off by ~12 mm in height). The
+  shell drawn in the model (`hardware/mesh/roomba_690_body.stl`) is the GrabCAD
+  Create 2 reference CAD instead, and it is display-only: fit is checked against
+  the measured deck.
 - `hardware/mesh/realsense_d435i.stl` — the D435i display mesh, derived from
   Intel's file, oriented into the robot frame.

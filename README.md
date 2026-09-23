@@ -141,34 +141,62 @@ estimate -- zero it to recover. If a measured 360-degree spin doesn't return to
 
 ## Hardware model
 
-The other half of the repo is a parametric mount that carries a Jetson Xavier NX
-and an Intel RealSense on top of the robot. `hardware/dimensions.json` is the
-single source of truth for every physical dimension; both the OpenSCAD model and
-the Three.js viewer read it, so they can't disagree.
+The other half of the repo is a parametric mount that carries a Jetson Xavier NX,
+an Intel RealSense D435i and a 3S LiPo on top of the robot. `hardware/dimensions.json`
+is the single source of truth for every physical dimension; both the OpenSCAD model
+and the Three.js viewer read it, so they can't disagree.
 
-![Exploded view of the mount: battery cradle, camera rocker mast and Jetson plate lifted off the hub](hardware/preview/assembly_exploded.png)
+The frame is a **hub** around the Clean button with **three carriers** on it:
+the Jetson plate on the right, the front plate (DROK buck plus the camera rocker)
+at the front, and the battery cradle on the left. The rear centre of the deck is
+left empty, so the dust bin still comes out. Placement comes from the **measured** top deck of my
+own 690 (`hardware/reference/roomba_top_deck.step`, `deck_measured` in the JSON),
+not the Create 2 CAD, which is now display-only:
 
-![Top-down view of the mount's three arms -- camera rocker mast, Jetson plate and battery cradle -- around the central hub](hardware/preview/assembly_top.png)
+- **The hub is the only attachment to the robot.** It is my own widened hub
+  (OD 86.36, a 3.26 mm plate on the deck) with four Ø3.4 holes through it into the
+  Roomba. Those four positions are an *estimate* until they are modelled from the
+  robot. There are no chassis-boss ears any more.
+- **Carriers bolt only to the hub pads**, two M3 countersunk flat heads each,
+  flush with the tongue. How those bolts hold in the hub -- tapped, heat-set
+  insert, or through into the shell -- is **not decided yet**.
+- **Placement limits:** on the deck, inside r 134.26; past that a part's underside
+  must clear the 3.3 mm raised ring; front half r <= 144.42 (the bumper moves),
+  rear half r <= 150.5.
+- The pack is my own padded pack, 147.32 x 34.65 x 42.33, standing on its side;
+  the cradle pocket is cut exactly to it. Camera optical centre 117 mm, build
+  height 133.5 mm (stock 92.25), payload 977 g.
+
+![Exploded view: battery cradle, front plate with the camera rocker, and Jetson plate lifted off the hub](hardware/preview/assembly_exploded.png)
+
+![Top-down view of the three carriers -- front plate with the camera rocker, Jetson plate and battery cradle -- around the central hub](hardware/preview/assembly_top.png)
+
+The two renders above predate the measured-deck rebuild (they still show the old
+chassis-boss ears and a flat-lying pack); rerun `build_viewer.py` for a view of
+the current geometry.
 
 - `gen.py` writes `dims.scad`, which `roomba_nx.scad` includes. Export a part
   with `openscad -D 'part="hub"' -o stl/hub.stl roomba_nx.scad` (parts: hub,
   jetson_plate, front_plate, camera_rocker, battery_cradle, battery_lid,
   dock_pin_block, pad_carrier); `part="assembly"` renders the whole robot.
-- `verify.py` re-assembles the exported STLs and checks the build against its own
-  rules -- height and radius against the shell, part-to-part interference by
-  voxel overlap, the camera's tilt sweep, and the four things that must stay
-  reachable (Clean button, dust bin, front IR boss, mini-DIN). It exits non-zero
+- `verify.py` re-assembles the exported STLs and checks every part against the
+  measured deck over the camera's whole tilt range -- radius per half (front /
+  rear), clearance over the raised ring, nothing below the deck, the berth
+  around the screw on the ring -- plus hub-only mounting (every carrier's bolt
+  holes open and seated on a hub pad), part-to-part interference by voxel
+  overlap, the tilt sweep, the three things that must stay reachable (Clean
+  button, dust bin, mini-DIN), balance and print footprints. It exits non-zero
   on a failure; run it after every geometry change.
 - `build_viewer.py` injects the JSON and the STLs into a template and writes
-  `docs/assembly-3d.html`, an interactive Three.js view. Renders of the current
-  design are in `hardware/preview/`.
+  `docs/assembly-3d.html`, an interactive Three.js view. The renders in
+  `hardware/preview/` are from before the measured-deck rebuild.
 
 **`camera_rocker` is three separate pieces, not one.** The part exports as a
-strap (24.0 x 88.0 x 4.0) and two arms (24.0 x 8.0 x 21.5) with a 1.5 mm gap
-between them; the D435i and its screws are what join them on assembly. It is a
-single `part=` name and `verify.py` measures it as one payload, so nothing is
-wrong -- but a slicer will lay out three objects, and each arm is an unsupported
-21.5 mm tower on an 8 x 24 mm footprint, so give them a brim.
+strap (24.0 x 88.0 x 4.0) and two ears (8 wide, 21.5 tall, rounded ahead of the
+pivot) with a 1.5 mm gap between them; the D435i and its screws are what join
+them on assembly. It is a single `part=` name and `verify.py` measures it as one
+payload, so nothing is wrong -- but a slicer will lay out three objects, and each
+ear is an unsupported 21.5 mm tower on an 8 mm-wide footprint, so give them a brim.
 
 Change a number in the JSON, rerun `gen.py`, re-export the affected STLs, run
 `verify.py`, then rerun `build_viewer.py`.
@@ -178,10 +206,12 @@ Change a number in the JSON, rerun `gen.py`, re-export the affected STLs, run
 Works end to end on my hardware: a Roomba 690 on `/dev/cu.usbserial-BG03LB59`
 (FTDI FT232R), macOS. The driving/telemetry loop is complete and the latency and
 firmware findings in RESEARCH.md are all measured on this unit, not copied from
-the spec. The hardware model generates, verifies and renders, but the physical
-mount has not been printed or fitted yet -- some dimensions still depend on
-measurements listed in `scans/README.md`, and one vendor chassis mesh is off by
-~12 mm, so treat the fit as unverified until then.
+the spec. The hardware model generates, verifies (`verify.py` PASS against the
+measured deck) and renders, but the physical mount has not been printed or fitted
+yet. Open before printing: the hub's four mount-hole positions are estimated, and
+how the carrier bolts hold in the hub is undecided. The dock parts (`pad_carrier`,
+`dock_pin_block`) stay blocked on a measurement of the Home Base ramp -- see
+`scans/README.md`.
 
 Generated STLs, third-party vendor CAD and datasheet PDFs are gitignored (they
 are large and not mine to redistribute); re-fetch them from the sources in

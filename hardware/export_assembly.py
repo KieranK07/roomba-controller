@@ -29,8 +29,8 @@ OUT = os.path.join(P.HERE, "export")
 # (placement name, output stem, what it is).  Prefixes group the listing: what you print, what you
 # buy, and the robot they both bolt to.
 EXPORT = [
-    ("roomba_shell",   "shell_roomba_690",           "stock 690 chassis and bumper - the datum"),
-    ("hub",            "printed_hub",                "hub ring around the Clean button"),
+    ("roomba_shell",   "shell_roomba_690",           "stock 690 chassis and bumper - display only, not the fit datum"),
+    ("hub",            "printed_hub",                "hub around the Clean button - the only part fastened to the robot"),
     ("jetson_plate",   "printed_jetson_plate",       "right carrier, under the Jetson"),
     ("front_plate",    "printed_front_plate",        "front carrier, DROK + camera cheeks"),
     ("camera_rocker",  "printed_camera_rocker",      "D435i rocker, at the -8 deg design tilt"),
@@ -61,6 +61,19 @@ about a horizontal axis are the two the parts genuinely have: the camera rocker 
 their {tilt:+.0f} deg design tilt, and the pad carrier flipped 180 deg because it prints
 pockets-up and installs pockets-down.
 
+## What the shell is, and what holds the frame on
+
+`shell_roomba_690.stl` is the GrabCAD Create 2 reference CAD - a **display** shape.  It is not what
+the parts were fitted to: placement comes from the measured top deck of the real robot
+(`dimensions.json` `deck_measured`, from `reference/roomba_top_deck.step`), which `verify.py` checks
+every part against.  The measured deck's 3.3 mm raised ring (r 135.26 .. 144.42) is not in this mesh.
+
+`printed_hub.stl` is Kieran's widened hub (OD 86.36, a 3.26 mm plate on the deck) and it is the
+**only** part fastened to the robot: four 3.4 mm holes through it into the Roomba, at positions that
+are an ESTIMATE until they are modelled from the robot.  The three carriers bolt only to the hub's
+pads, two M3 countersunk flat heads each; how those bolts hold in the hub (tapped, heat-set insert, or
+through into the shell) is not decided.  None of the printed parts touches a chassis screw boss.
+
 ## Files
 
 | file | x0 | x1 | y0 | y1 | z0 | z1 | solid | what it is |
@@ -83,8 +96,8 @@ does not change them.
   put a 114 mm tall box in front of the machine.
 - **Cable harness.** Not excluded so much as absent: there is no harness geometry anywhere in the
   repo.  Routing is described in the build sheet, not modelled.
-- `ref_roomba()`'s Clean-button disc and screw-boss studs.  Those are OpenSCAD annotations drawn on
-  top of the shell mesh to show where things land, not objects.
+- `ref_roomba()`'s Clean-button disc, the measured raised ring and point A's screw on it.  Those are
+  OpenSCAD annotations drawn on top of the shell mesh to show where things land, not objects.
 
 The **pad carrier and the dock pin block are both IN** despite being dock-related.  They bolt to
 the robot / mate with it and are printed here; only the station itself is out.

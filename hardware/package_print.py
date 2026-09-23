@@ -37,8 +37,8 @@ PARTS = [
     ("jetson_plate", "Right carrier, under the Jetson on 9 mm standoffs. Bolts to the hub's right pad.", ""),
     ("front_plate", "Front carrier: the DROK and the camera cheeks. Bolts to the hub's front pad.", ""),
     ("camera_rocker", "D435i friction-clamp rocker; the pivot runs through the camera's optical centre.",
-     "THREE separate pieces by design - a strap and two arms 1.5 mm apart, joined by the camera and "
-     "its screws. Each arm is a 21.5 mm tower on an 8 x 24 mm footprint: use a brim."),
+     "THREE separate pieces by design - a strap and two ears 1.5 mm off it, joined by the camera and "
+     "its screws. Each ear is a 21.5 mm tower on an 8 x 23 mm footprint: use a brim."),
     ("battery_cradle", "Left carrier, the pack cradle. Sits flush on the deck; bolts to the hub's left pad.",
      "The pocket is cut exactly to the owned pack's PADDED envelope - no extra clearance."),
     ("battery_lid", "Cradle lid; carries the BMS and INA219.", ""),
