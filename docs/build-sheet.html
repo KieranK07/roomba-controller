@@ -993,7 +993,10 @@ cheap to find.</p>
 <h2><span class="num">LATER</span>Software backlog</h2>
 <p>None of this blocks the build. It is what an audit of <code>server.py</code> and
 <code>roomba_oi/</code> turned up, kept here so it does not get lost, roughly in the order the
-consequences get worse.</p>
+consequences get worse. Three of the original findings are <strong>fixed</strong> (15&nbsp;September,
+pull request&nbsp;#1): the control socket now refuses pages it did not serve, e-stop blocks the raw
+opcode path as well as driving, and only five opcodes with checked payloads reach the serial
+port. <code>tests/test_safety_gates.py</code> covers all three.</p>
 <div class="scroll">
 <table>
   <thead><tr><th>Item</th><th>Where</th><th>What happens today</th></tr></thead>
@@ -1003,20 +1006,6 @@ consequences get worse.</p>
         anywhere in the repo. Until it exists the BMS at ~8.4&nbsp;V is the <em>only</em> thing
         between a flat pack and cell damage, and it is meant to be the backstop, not the
         mechanism</td></tr>
-    <tr><td class="name">E-stop does not gate the opcode path</td><td class="m">server.py ws_handler</td>
-        <td><code>estop</code> is read only in <code>target()</code>, which is the drive mixer. A
-        <code>{"t":"op"}</code> message still reaches <code>bot.command()</code> while the stop is
-        latched, so CLEAN or SEEK_DOCK starts the robot moving from a stopped state</td></tr>
-    <tr><td class="name">Any opcode, any payload</td><td class="m">server.py ws_handler</td>
-        <td><code>int(msg["opcode"])</code> and <code>bytes(msg["data"])</code> go straight to the
-        serial port. That reaches the whole OI surface, including the ones that rewrite the
-        robot&rsquo;s own state. An allowlist of the handful of opcodes the UI actually sends would
-        close it</td></tr>
-    <tr><td class="name">No WebSocket Origin check</td><td class="m">server.py websockets.serve</td>
-        <td>No <code>origins=</code> is passed, and the library allows every origin by default. Any
-        page open in a browser on the same machine can connect to the control socket and drive the
-        robot. On <code>--host 0.0.0.0</code> that widens to the whole LAN, which the startup banner
-        does warn about</td></tr>
     <tr><td class="name">Telemetry fan-out ignores failures</td><td class="m">server.py telemetry_loop</td>
         <td><code>return_exceptions=True</code> swallows send errors and dead sockets are only
         reaped when the read side notices. Harmless, but it hides the case where a client is
