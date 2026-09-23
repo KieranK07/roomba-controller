@@ -95,7 +95,7 @@
     <div class="hd">
       <div class="eyebrow">Build sheet companion</div>
       <h1>Roomba NX Assembly</h1>
-      <p class="sub">Printed parts are the exact STLs that go to the printer. The Jetson and the camera are vendor CAD. Everything else is a datasheet envelope. Three carriers at 0°, 90° and 180°; the rear deck carries nothing, so the dust bin still slides out.</p>
+      <p class="sub">Printed parts are the exact STLs that go to the printer. The Jetson and the camera are vendor CAD. Everything else is a datasheet envelope. Fitted to the deck measured off the real robot: only the hub is fastened to it, and three carriers hang off the hub at 0°, 90° and 180°. The rear deck carries nothing, so the dust bin still slides out.</p>
     </div>
     <div class="ctl">
       <label>Explode <b id="exv">0 mm</b></label>
@@ -136,7 +136,8 @@ const R   = D.roomba_690.diameter / 2, H = D.roomba_690.height, Z0 = D.layout.ch
 const DECK = D.roomba_690.deck_height;    // the flat top the frame bolts to; 92.25 is only the front IR boss
 const F   = D.frame, L = D.layout, P = D.print;
 const PT  = F.carrier.plate_t, PZ = DECK + PT;              // top of any carrier plate
-const CRAD_X = F.battery.r0 + F.battery.outer[0]/2;         // 88: outboard centre of the cradle
+const CRAD_X = F.battery.r0 + F.battery.outer[0]/2;         // 76.44: outboard centre of the cradle
+const DM = D.deck_measured, HUB = DM.hub, LIM = DM.limits;   // Kieran's measured deck: the authority on fit
 const PACK_TOP = DECK + F.battery.floor + D.ovonic_3s_8000.design_h;
 const LID_TOP = PACK_TOP + F.battery.lid_t;                 // the BMS and the INA219 sit on this face
 const PIV_X = F.camera.pivot_y, PIV_Z = F.camera.pivot_z;   // carrier-local: outboard, and above the deck
@@ -176,6 +177,7 @@ const mat = (color, o={}) => new THREE.MeshStandardMaterial(Object.assign({color
 const M = {
   print:  mat(PRINT), print2: mat(PRINT2),
   roomba: mat(0xC4CACF, {transparent:true, opacity:.55}), bumper: mat(0x8A9096), button: mat(0xEDEDED),
+  ring:   mat(0x8F969C),                                  // the measured deck ring, as in ref_roomba()
   wheel:  mat(0x222222), pcb: mat(0x1E6B3A), module: mat(0x2A2E33), fan: mat(0x111111),
   lipo:   mat(0x2C5BB5), cam: mat(0xD9DBDD, {roughness:.35}), lens: mat(0x111111, {roughness:.2, metalness:.3}),
   drok:   mat(0x3A3F45), ina: mat(0x6A2FB5), dock: mat(0x4A4F55), copper: mat(0xC8A24A, {metalness:.6, roughness:.35}),
@@ -245,18 +247,24 @@ function reg(group, meta){ group.userData = Object.assign({base: group.position.
   const g = grp('roomba');
   stl('roomba_690_body', M.roomba, g);                       // Create 2 reference CAD = the 600-series shell
   cylz(D.roomba_690.clean_button_diameter/2 - 1, 1.5, [0,0,DECK-0.5], M.button, g);
-  for (const b of D.roomba_690.screw_bosses) cylz(2.2, 1, [b[0], b[1], DECK], M.slot, g, 16);
+  // The MEASURED raised ring (deck_measured, off Kieran's own robot) - the Create CAD shell does not
+  // have it - and sheet point A's screw standing on it.  Same as ref_roomba() in roomba_nx.scad.
+  { const s = new THREE.Shape(); s.absarc(0, 0, DM.ring_r1, 0, 2*Math.PI, false);
+    const hole = new THREE.Path(); hole.absarc(0, 0, DM.flat_r, 0, 2*Math.PI, true); s.holes.push(hole);
+    const ring = new THREE.Mesh(new THREE.ExtrudeGeometry(s, {depth: DM.ring_h, bevelEnabled: false, curveSegments: 180}), M.ring);
+    ring.position.z = DECK; g.add(ring); }
+  cylz(2.5, DM.screw_a_h, [DM.screw_a[0], DM.screw_a[1], DECK], M.slot, g, 20);
   reg(g, {name:'Roomba 690', kind:'ref', dims:`Ø${D.roomba_690.diameter} × ${H} mm`, mass:D.roomba_690.mass_g,
-          note:`Shell is the Create 2 reference CAD, which is the same 600-series chassis. The deck is flat at ${DECK} mm over the whole body; the ${H} mm in the spec is reached only by the ${D.roomba_690.front_ir_boss.w} × ${D.roomba_690.front_ir_boss.d} mm IR boss on the front centreline, which is the one thing the frame has to stay behind. Dots mark the eleven chassis screw bosses under the faceplate.`});
+          note:`Shell is the Create 2 reference CAD (the same 600-series chassis), for looks only. What the frame is fitted to is the deck MEASURED off this robot: flat at ${DECK} mm out to r ${DM.flat_r}, then the grey ${DM.ring_h} mm raised ring to r ${DM.ring_r1.toFixed(1)}, and beyond that the bumper, which moves. Nothing rests past r ${LIM.on_deck_r_max}; anything that leans out over the ring clears it by ${(LIM.over_ring_underside_min - DM.ring_h).toFixed(1)} mm and stops at r ${LIM.front_r_max.toFixed(1)} in front, ${LIM.rear_r_max.toFixed(1)} behind. The brown stud is sheet point A, a screw on the ring (position estimated to ~1 mm).`});
 }
 
 // ---------- printed: hub
 {
-  const h = F.hub;
+  const h = HUB;
   const g = grp('hub'); g.position.z = DECK;
   stl('hub', M.print, g);
-  reg(g, {name:'Hub', kind:'print', dims:`Ø${h.od} ring, ${h.t} mm`, ex:[0,0,1],
-          note:`A plain ring clearing the ${D.roomba_690.clean_button_diameter} mm Clean button, with three radial pads at ${L.carrier_angles.join('/')}°. Each carrier tongue lies on top of a pad and is bolted down with two M3; the nuts sit in hex pockets in the pad's underside, trapped between the hub and the Roomba's shell, so no printed thread carries the joint.`});
+  reg(g, {name:'Hub', kind:'print', dims:`Ø${h.od} × ${h.top_h.toFixed(2)} mm plate`, ex:[0,0,1],
+          note:`Kieran's own hub, reproduced exactly: a Ø${h.od} / Ø${h.id} ring standing ${h.top_h.toFixed(2)} mm on the deck round the ${D.roomba_690.clean_button_diameter} mm Clean button, with pads at ${h.pad_angles.join('/')}°. It is the ONLY part fastened to the robot - four M3 through its ring into the Roomba at r ${h.mount_holes_r} on the diagonals (hole positions still an estimate). Each carrier's tongue lies on a pad and takes the pad's two M3 at r ${h.hole_r.join(' and ')}, countersunk flat heads so the tongue top finishes flush. No nut pockets: a ${h.top_h.toFixed(2)} mm plate on the deck has no room under it for a nut.`});
 }
 
 // ---------- right: Jetson plate + the dev kit
@@ -265,14 +273,14 @@ function reg(group, meta){ group.userData = Object.assign({base: group.position.
   const g = grp('jplate', CJ);
   stl('jetson_plate', M.print, g);
   reg(g, {name:'Jetson plate', kind:'print', dims:`r ${j.r0}–${j.r1} × ${2*j.half_w} mm`, ex:[1,0,0],
-          note:`Laps onto a hub pad, then ramps down to a ${PT} mm plate lying flat on the deck — nothing is stacked on top of an arm, which is where the old design lost its height. Four tapped ${j.standoff_h} mm standoffs on the carrier's ${(J.mount_holes[1][0]-J.mount_holes[0][0]).toFixed(1)} × ${(J.mount_holes[0][1]-J.mount_holes[2][1]).toFixed(1)} mm pattern, and two chassis bosses far enough apart that the plate cannot pivot on its tongue.`});
+          note:`Its ${F.carrier.tongue_t} mm tongue lies on the hub's right pad and takes the pad's two bolts, then a 45° ramp steps down the hub's ${HUB.top_h.toFixed(2)} mm to a ${PT} mm plate lying flat on the deck from r ${j.r0.toFixed(1)}. Those two bolts are its only fastening: no chassis-boss ears, the plate simply rests on the deck. It is clipped to the measured limits (r ≤ ${LIM.on_deck_r_max} on the flat, less ${F.envelope_margin} mm). Four tapped ${j.standoff_h} mm standoffs on the carrier's ${(J.mount_holes[1][0]-J.mount_holes[0][0]).toFixed(1)} × ${(J.mount_holes[0][1]-J.mount_holes[2][1]).toFixed(1)} mm pattern.`});
 
   const r = grp('jetson', CJ); r.position.set(L.jetson_center[0], 0, PT + j.standoff_h);
   r.rotation.z = L.jetson_rotation*Math.PI/180;
   stl('jetson_devkit_board',  M.pcb,    r);    // NVIDIA's own devkit CAD; z=0 is the carrier underside
   stl('jetson_devkit_cooler', M.module, r);
   reg(r, {name:'Jetson Xavier NX dev kit', kind:'ref', dims:`${J.board_w} × ${J.board_d} PCB, ${J.stack_height} mm tall`, mass:J.mass_g, ex:[1,0,1.2],
-          note:`NVIDIA's own developer kit CAD, the whole P3518 assembly: carrier, module, connectors, heatsink and fan. The ${J.board_w} mm axis runs fore-aft with the I/O edge facing INBOARD, so the barrel jack, the USB stack and the 40-pin header all present to the open deck instead of hanging over the rim. Barrel jack ${J.barrel_jack.od}×${J.barrel_jack.pin} mm, ${J.barrel_jack.v_in[0]}–${J.barrel_jack.v_in[1]} V, fed straight from the pack.`});
+          note:`NVIDIA's own developer kit CAD, the whole P3518 assembly: carrier, module, connectors, heatsink and fan. Board centre at x ${L.jetson_center[0]}, as far out as the front limit allows (the PCB's front outboard corner lands 0.5 mm inside r ${LIM.front_r_max.toFixed(1)}). The ${J.board_w} mm axis runs fore-aft with the I/O edge facing INBOARD, so the barrel jack and the USB stack present to the open deck; that edge's underside parts now overhang the tongue and its r ${HUB.hole_r[1]} bolt, which is why the standoffs are ${j.standoff_h} mm, not 6. Barrel jack ${J.barrel_jack.od}×${J.barrel_jack.pin} mm, ${J.barrel_jack.v_in[0]}–${J.barrel_jack.v_in[1]} V, fed straight from the pack.`});
 }
 
 // ---------- left: battery cradle, pack, lid, and the two boards the lid carries
@@ -281,17 +289,23 @@ function reg(group, meta){ group.userData = Object.assign({base: group.position.
   const g = grp('cradle', CB);
   stl('battery_cradle', M.print, g);
   reg(g, {name:'Battery cradle', kind:'print', dims:`${b.outer[0]} × ${b.outer[1]} × ${(b.floor+b.wall_h).toFixed(1)} mm`, ex:[1,0,0],
-          note:`Cut for the ${B.design_l} × ${B.design_w} × ${B.design_h} mm hard-case envelope, not the ${B.l} × ${B.w} × ${B.h} mm soft pack, so either pack drops in — the soft one simply sits with up to ${(B.design_l-B.l).toFixed(0)} mm of end play, taken up by the straps and a foam shim. Cutting for the smaller one would have meant a reprint.`});
+          note:`Tongue on the hub's left pad, 45° ramp down ${HUB.top_h.toFixed(2)} mm, box flat on the deck from r ${b.r0.toFixed(1)} - its outer corners land at r 124.9, all on the flat. The pocket is cut to EXACTLY ${B.design_l} × ${B.design_w} × ${B.design_h} mm, Kieran's padded pack standing on its side, with no added clearance: the padding is the fit, so only that pack fits. The ${b.wall_h} mm walls are the pack's full height. Strap lugs at y ±${b.strap_y}; the lead notch is in the front end wall.`});
 
-  const r = grp('lipo', CB); r.position.set(CRAD_X, 0, b.floor); r.rotation.z = L.battery_rotation*Math.PI/180;
-  stl('lipo_3s', M.lipo, r);
-  reg(r, {name:'Ovonic 3S 8000 mAh', kind:'ref', dims:`${B.l} × ${B.w} × ${B.h} mm`, mass:B.mass_g, ex:[1,0,1.2],
-          note:`89 Wh. 10.5–12.6 V sits inside the Jetson's 9–20 V window, so no converter. Charged to 12.0 V, not 12.6, for cycle life. Drawn at Ovonic's soft-pack figures with a ${B.corner_r} mm radius — a pouch cell is a rounded brick and nothing more, so the leads are left to the harness.`});
+  // The mesh is Ovonic's 135 x 42 x 34 brick lying FLAT, and ports.lipo is quoted in that flat
+  // mesh's own frame.  The real pack stands on its side, so - exactly as placement.py does - it is
+  // centred on its 34, rolled 90 deg about its long axis and stood on the pocket floor.  The roll
+  // lives on an inner group; ports.lipo is attached to the MESH itself (lipoMesh), whose frame is
+  // the flat STL's, so the leads roll with the pack.
+  const r = grp('lipo', CB); r.position.set(CRAD_X, 0, b.floor); r.rotation.z = Math.PI/2;   // placement.py: rz(90)
+  const rl = grp('lipoRoll', r); rl.position.z = B.w/2; rl.rotation.x = Math.PI/2;          // tr(0,0,w/2) rx(90)
+  stl('lipo_3s', M.lipo, rl, [0, 0, -B.h/2]).name = 'lipoMesh';                            // tr(0,0,-h/2)
+  reg(r, {name:'Ovonic 3S 8000 mAh', kind:'ref', dims:`${B.design_l} × ${B.design_w} × ${B.design_h} mm padded`, mass:B.mass_g, ex:[1,0,1.2],
+          note:`89 Wh. 10.5–12.6 V sits inside the Jetson's 9–20 V window, so no converter. Charged to 12.0 V, not 12.6, for cycle life. Stands on its side, ${B.design_h.toFixed(1)} mm tall and ${B.design_w.toFixed(1)} across the cradle. Drawn is Ovonic's ${B.l} × ${B.w} × ${B.h} mm soft-pack brick rolled onto its side; Kieran's pack with its padding measures ${B.design_l} × ${B.design_w} × ${B.design_h}, which is what the pocket is cut to. Mass is Ovonic's figure - the padding is not weighed.`});
 
   const d = grp('lid', CB); d.position.z = PACK_TOP - DECK - b.lid_skirt;   // the STL is exported lifted on its skirt so it prints flat
   stl('battery_lid', M.print2, d);
-  reg(d, {name:'Battery lid', kind:'print', dims:`${(b.outer[0]+2*b.lid_lip).toFixed(1)} × ${(b.outer[1]+2*b.lid_lip).toFixed(1)} × ${b.lid_t} mm`, ex:[1,0,2.2],
-          note:`Lies on the pack, located by end skirts capping the cradle walls and clamped by the same two straps. The ${b.wall_h} mm walls are the full pack height, so the lid bears on the walls and not on the cells. Carrying the BMS and the INA219 up here puts both boards, the T-plug and all four balance leads within about 40 mm of the cells they protect.`});
+  reg(d, {name:'Battery lid', kind:'print', dims:`${b.lid_w} × ${(b.outer[1]+2*(b.lid_lip+P.fit_clearance)).toFixed(1)} × ${b.lid_t} mm`, ex:[1,0,2.2],
+          note:`Lies on the pack, located by a ${b.lid_skirt} mm skirt capping the cradle walls and clamped by the two straps at y ±${b.strap_y}. The walls are the full pack height, so the lid bears on the walls and not on the cells. It is ${b.lid_w} mm wide - wider than the skirt - because the ${D.bms_daier_3s.w} mm BMS and its ties need it, and the overhang carries the strap slots. Carrying the BMS and the INA219 up here puts both boards, the T-plug and all four balance leads within about 40 mm of the cells they protect.`});
 
   const bd = grp('bms', CB); bd.position.set(CRAD_X, b.bms_center_y, LID_TOP - DECK);
   stl('bms', M.pcb, bd);
@@ -310,8 +324,8 @@ let camPivot;
   const f = F.front, C = F.camera, K = D.realsense_d435i;
   const g = grp('fplate', CF);
   stl('front_plate', M.print, g);
-  reg(g, {name:'Front plate', kind:'print', dims:`r ${f.r0}–${f.r1} × ${2*f.half_w} mm`, ex:[1,0,0],
-          note:`DROK at the inboard end, integral camera cheeks at the outboard end. It stops at r ${f.r1}, 3 mm short of the front IR boss, and nothing standing on it reaches in front of that boss. The cheeks are part of the plate, so the camera has no separate bracket to loosen.`});
+  reg(g, {name:'Front plate', kind:'print', dims:`r ${f.r0.toFixed(1)}–${C.cheek_y[1]} × ${2*f.half_w_inboard}/${2*f.half_w} mm`, ex:[1,0,0],
+          note:`Tongue on the hub's front pad, 45° ramp down ${HUB.top_h.toFixed(2)} mm, plate flat on the deck from r ${f.r0.toFixed(1)}. DROK at the inboard end, integral camera cheeks at the outboard end, running out to r ${C.cheek_y[1]}. Only ${2*f.half_w_inboard} mm wide until the cheek gussets, so it clears the battery cradle's front end; ${2*f.half_w} at the cheeks. Clipped so nothing passes r ${LIM.front_r_max.toFixed(1)}, the ring's outer edge - the bumper is right there. The cheeks are part of the plate, so the camera has no separate bracket to loosen.`});
 
   const r = grp('drok', CF); r.position.set(f.drok_center_y, 0, PT); r.rotation.z = L.drok_rotation*Math.PI/180;
   stl('drok', M.drok, r);
@@ -323,12 +337,12 @@ let camPivot;
   const h = grp('rocker', camPivot); h.position.z = -(K.h/2 + C.rocker[2]);   // the STL is exported lifted so it prints flat
   stl('camera_rocker', M.print2, h);
   reg(h, {name:'Camera rocker', kind:'print', dims:`${C.rocker[0]} × ${C.rocker[1]} × ${C.rocker[2]} mm cradle`, ex:[0,0,0], pivotChild:true,
-          note:`A friction clamp, not a mast. The pivot runs THROUGH the D435i's optical centre, so tilting aims the camera without moving it, and the ${K.h} mm body is the only thing above the pivot — which is why the whole bracket is ${C.cheek_top} mm tall instead of 89. The clamp bolt sweeping ${C.tilt_min}° to +${C.tilt_max}° is what cuts the arc slot in the cheeks.`});
+          note:`A friction clamp, not a mast. The pivot runs THROUGH the D435i's optical centre, so tilting aims the camera without moving it, and the ${K.h} mm body is the only thing above the pivot — which is why the whole bracket is ${C.cheek_top} mm tall instead of 89. The clamp bolt sweeping ${C.tilt_min}° to +${C.tilt_max}° is what cuts the arc slot in the cheeks. Ahead of the pivot each ear is an r ${C.ear_nose_r} disc about it, so tilting cannot swing a corner forward past the front limit.`});
 
   const c = grp('camera', camPivot); c.rotation.z = -Math.PI/2;
   stl('realsense_d435i', M.cam, c);          // Intel's own mesh, re-oriented: optics face +Y
   reg(c, {name:'RealSense D435i', kind:'ref', dims:`${K.w} × ${K.d} × ${K.h} mm`, mass:K.mass_g, ex:[0,0,0], pivotChild:true,
-          note:`Optical centre at exactly ${(DECK + PIV_Z).toFixed(0)} mm, which is derived and not chosen: it is the lowest the camera can sit before the robot's own front IR boss starts eating its near field. The grazing ray over that boss is a 172 mm slant, still inside the D435i's own 175–195 mm Min-Z, so the boss costs no usable depth. Geometry is Intel's own model from the RealSense ROS package, measured at ${K.w} × ${K.d} × ${K.h} mm against the datasheet.`});
+          note:`Pivot at y ${PIV_X}, optical centre at ${(DECK + PIV_Z).toFixed(0)} mm - both derived, not chosen. The pivot is as far forward as the front limit allows at full tilt. The height is the lowest at which the robot's own front edge hides no more floor than the old layout did: a raycast at the ${L.camera_tilt_deg}° design tilt puts the hidden band at 194–227 mm of slant range, starting just at the D435i's 195 mm Min-Z. It costs no build height - the camera top is under the battery stack's. Geometry is Intel's own model from the RealSense ROS package, measured at ${K.w} × ${K.d} × ${K.h} mm against the datasheet.`});
 }
 
 // ---------- printed: pad carrier (underside)
@@ -372,7 +386,7 @@ const harness = grp('harness');
 const OBJ = n => scene.getObjectByName(n);
 const PORT = D.ports, BMS = D.bms_daier_3s;
 const HW = { pads:OBJ('pads'), drok:OBJ('drok'), bms:OBJ('bms'), ina:OBJ('ina'),
-             lipo:OBJ('lipo'), jet:OBJ('jetson'), cam:OBJ('camera'), shell:OBJ('roomba') };
+             lipo:OBJ('lipoMesh'), jet:OBJ('jetson'), cam:OBJ('camera'), shell:OBJ('roomba') };
 
 // --- connector positions, each in its owner's local frame -----------------------------
 // BMS: the one set of measured ports.  Same mapping ref_bms() uses: at(px,py) -> [py-W/2, px-L/2, T].
@@ -445,52 +459,65 @@ const inlineBox = (w, l, h, m) => { const g = new THREE.Mesh(new THREE.BoxGeomet
   g.frustumCulled = false; harness.add(g); return g; };
 
 // --- routing lanes (robot frame) -------------------------------------------------------
+// Waypoints are written against the parts they route round (the cradle's centreline and walls, the
+// lid's edges, the DROK and the Jetson), not as bare numbers, so a moved part drags its lane along.
 const DKZ = DECK + 3;           // crossing the open deck between two carriers, just off the shell
 const DFLOOR = DECK + 2;        // nothing droops into the Roomba's lid
 const LIDZ = LID_TOP + 6;       // the lane over the battery lid, clear of the BMS and the INA219
+const XC = -CRAD_X;                                             // cradle centreline (robot x; the left carrier is at 180)
+const LID_IN = XC + F.battery.lid_w/2;                          // the lid's inboard edge
+const WALL_IN = -F.battery.r0;                                  // the cradle's inboard wall face
+const LANE_X = (LID_IN + WALL_IN)/2 + 6;                        // the rear-inboard lane down off the lid, clear of both
+const NOTCH_Y = F.battery.outer[1]/2;                           // front end of the cradle: the lead notch is here
+const LID_Y = NOTCH_Y + F.battery.lid_lip + P.fit_clearance;    // front edge of the lid
+const NOTCH_Z = PACK_TOP - 5;                                   // mid-height of the lead notch
+const DY = F.front.drok_center_y, JX = L.jetson_center[0];
 scene.updateMatrixWorld(true);
 
 // 1. dock pads -> DROK input.  18 AWG, and the only pair that crosses the shell: up through the
 //    drilled grommet at ports.loom.deck_grommet, then forward onto the front plate.  The buck's
-//    input terminals sit at robot +X, 31 mm from the grommet, so the pair never crosses it.
+//    input terminals sit at robot +X, about 24 mm from the grommet, so the pair never crosses it.
 const GR = PORT.loom.deck_grommet;
-for (const w of [{p:'lead_plus',  q:'in_plus',  m:M.wpos, o:[0,0, 1.4], y:76},
-                 {p:'lead_minus', q:'in_minus', m:M.wneg, o:[0,0,-1.4], y:96}])
+for (const w of [{p:'lead_plus',  q:'in_plus',  m:M.wpos, o:[0,0, 1.4], y:DY-10},
+                 {p:'lead_minus', q:'in_minus', m:M.wneg, o:[0,0,-1.4], y:DY+10}])
   cable({a:port(HW.pads, PORT.pad_carrier[w.p]), b:port(HW.drok, PORT.drok[w.q]), mat:w.m, r:R18, off:w.o,
          sag:3, slack:.07, floor:Z0,                                  // taped to the shell underside, never hanging below it
-         via:[[w.o[2] > 0 ? 20 : -20, 88, 9], [24, 72, 9], [GR[0], GR[1], 20], [GR[0], GR[1], GR[2]+5],
-              [43, 57, PZ+3], [41, 64, PZ+7], [37, w.y - 8, PZ+13]]});
+         via:[[w.o[2] > 0 ? 20 : -20, 88, 10], [24, 72, 10], [GR[0], GR[1], 20], [GR[0], GR[1], GR[2]+5],
+              [GR[0]-1, GR[1]+8, PZ+5], [40, w.y - 6, PZ+11]]});
 
 // 2. DROK output -> 1N5822 Schottky -> BMS P+ / P-.  18 AWG.  The outputs face robot -X, so the
-//    pair runs straight off the front plate, down the open wedge between the hub and the cradle,
-//    and up the cradle's inboard wall onto the lid.  It never crosses the deck twice.
+//    pair drops off the front plate's inboard edge, runs aft down the open wedge between the hub and
+//    the cradle's inboard wall, climbs past the lid's inboard edge and crosses the lid to P+/P-,
+//    which sit at the BMS's rear end.  It never crosses the deck twice.
 for (const w of [{q:'out_plus',  b:BMS.pads_round.Pplus,  m:M.wpos, z: 1.2, hw:1},
                  {q:'out_minus', b:BMS.pads_round.Pminus, m:M.wneg, z:-1.2, hw:0}])
   cable({a:port(HW.drok, PORT.drok[w.q]), b:port(HW.bms, bmsPad(w.b)), mat:w.m, r:R18, off:[0,0,w.z],
-         sag:3, slack:.11, floor:PZ+1, hw: w.hw ? [[inlineCyl(1.7, 6.5, M.diode), 3]] : null,
-         via:[[-37, 84, PZ+16], [-43, 71, PZ+10], [-49, 60, PZ+5], [-55, 48, DKZ+2],
-              [-58, 30, DKZ+2], [-60, 16, DKZ+3], [-60, 10, LID_TOP-6], [-67, 8, LIDZ], [-84, 6, LIDZ]]});
+         sag:3, slack:.10, floor:PZ+1, hw: w.hw ? [[inlineCyl(1.7, 6.5, M.diode), 2]] : null,
+         via:[[-39, DY - 12, PZ+14], [-44, DY - 24, PZ+8], [LID_IN + 1, 44, DKZ+3], [LID_IN + 1, 28, DKZ+5],
+              [LID_IN + 1, 20, LID_TOP-8], [LID_IN - 1, 14, LIDZ], [XC + 8, 2, LIDZ], [XC, -3, LIDZ-1]]});
 
 // 3. LiPo T-plug -> BMS B+ / B-.  14 AWG, the heaviest pair.  The leads leave the pack's FRONT
-//    face, which is the end the cradle and the lid both carry a notch for: up through the notch,
-//    over the lip and aft along the lid to the pads at the board's corners.
-const packRun = [[-92, 70, 110], [-96, 74, LID_TOP-4], [-99, 77, LIDZ], [-102, 60, LIDZ],
-                 [-104, 40, LIDZ]];
+//    face into the gap before the cradle's end wall, rise to the lead notch cut in that wall and in
+//    the lid's skirt, pass out through it, turn up over the lid's front edge and run aft along the
+//    lid to the pads at the board's corners.
+const packRun = [[XC, NOTCH_Y - 3, NOTCH_Z - 2], [XC, NOTCH_Y, NOTCH_Z], [XC, LID_Y + 5, NOTCH_Z + 2],
+                 [XC, LID_Y + 6, LIDZ], [XC - 2, LID_Y - 12, LIDZ], [XC - 4, 58, LIDZ]];
 cable({a:port(HW.lipo, PORT.lipo.t_plus), b:port(HW.bms, bmsPad(BMS.pads.Bplus)), mat:M.wpos, r:R14,
-       sag:4, slack:.10, floor:LID_TOP+4, off:[0, 0, 2.2],
-       via:[...packRun, [-106, 18, LIDZ], [-107, 6, LIDZ-2]]});
+       sag:4, slack:.10, floor:LID_TOP+4, off:[-2.2, 0, 0],
+       via:[...packRun, [XC - 18, 30, LIDZ], [XC - 21, 6, LIDZ], [XC - 20, -4, LIDZ-2]]});
 cable({a:port(HW.lipo, PORT.lipo.t_minus), b:port(HW.bms, bmsPad(BMS.pads.Bminus)), mat:M.wneg, r:R14,
-       sag:4, slack:.10, floor:LID_TOP+4, off:[0, 0, -2.2],
-       via:[...packRun, [-92, 42, LIDZ], [-78, 48, LIDZ-2]]});
+       sag:4, slack:.10, floor:LID_TOP+4, off:[2.2, 0, 0],
+       via:[...packRun, [XC + 12, 48, LIDZ], [XC + 17, 42, LIDZ-2]]});
 
 // 4. LiPo balance tail -> the four BMS solder pads.  22 AWG bundled 2x2 at 2 mm centres, following
-//    the T-plug over the end wall and fanning out only at the pads, which sit at all four corners.
-const balRun = [[-88, 70, 104], [-92, 74, LID_TOP-4], [-95, 77, LIDZ], [-96, 62, LIDZ],
-                [-92, 46, LIDZ]];
-const balTail = [[[-82, 50, LIDZ], [-74, 51, LIDZ-2]],                     // B-  inboard, far end
-                 [[-86, 34, LIDZ], [-78, 16, LIDZ], [-73, 7, LIDZ-2]],     // B1  inboard, near end
-                 [[-100, 50, LIDZ], [-105, 52, LIDZ-2]],                   // B2  outboard, far end
-                 [[-102, 34, LIDZ], [-107, 16, LIDZ], [-108, 6, LIDZ-2]]];  // B+  outboard, near end
+//    the T-plug out through the notch and over the lid's front edge, fanning out only at the pads,
+//    which sit at all four corners.
+const balRun = [[XC + 8, NOTCH_Y - 3, NOTCH_Z - 2], [XC + 7, NOTCH_Y, NOTCH_Z], [XC + 6, LID_Y + 5, NOTCH_Z + 2],
+                [XC + 6, LID_Y + 6, LIDZ], [XC + 5, LID_Y - 12, LIDZ], [XC + 2, 56, LIDZ]];
+const balTail = [[[XC + 12, 48, LIDZ], [XC + 17, 42, LIDZ-2]],                              // B-  inboard, front end
+                 [[XC + 10, 30, LIDZ], [XC + 16, 8, LIDZ], [XC + 17, -4, LIDZ-2]],           // B1  inboard, rear end
+                 [[XC - 12, 48, LIDZ], [XC - 18, 43, LIDZ-2]],                              // B2  outboard, front end
+                 [[XC - 12, 30, LIDZ], [XC - 19, 8, LIDZ], [XC - 20, -4, LIDZ-2]]];          // B+  outboard, rear end
 const balPad = [BMS.pads.Bminus, BMS.pads.B1, BMS.pads.B2, BMS.pads.Bplus];
 const balMat = [M.wbal0, M.wbal1, M.wbal2, M.wbal3];
 const balOff = [[-1, 0, 1], [1, 0, 1], [-1, 0, -1], [1, 0, -1]];
@@ -502,53 +529,55 @@ for (let i = 0; i < 4; i++)
 //    Both boards are on the lid, so this is the shortest run in the loom.
 cable({a:port(HW.bms, bmsPad(BMS.pads_round.Pplus)), b:port(HW.ina, inaPin(4)), mat:M.wpos, r:R18,
        sag:2, slack:.12, floor:LID_TOP+3,
-       via:[[-92, -2, LIDZ], [-86, -14, LIDZ], [-80, -26, LIDZ-2]]});
+       via:[[XC - 4, -14, LIDZ], [XC + 4, -24, LIDZ], [XC + 11, -30, LIDZ-2]]});
 
 // 6. INA219 VIN- -> 3 A inline fuse -> rocker switch -> Jetson barrel jack.  16 AWG, the load feed,
-//    down off the lid and straight across the empty rear deck.  The load runs left to right in this
-//    layout, so the FUSE comes first, nearest the source: everything downstream of it is protected.
+//    off the lid's inboard edge, down the lane beside the cradle and straight across the empty rear
+//    deck.  The load runs left to right in this layout, so the FUSE comes first, nearest the source:
+//    everything downstream of it is protected.
 const SW = PORT.loom.switch_mount, FU = PORT.loom.fuse_mount;
 const FUSE_R = D.fuse_holder_inline.cap_w/2 - 1;
+const offLid = y => [[LID_IN + 2, y, LIDZ-1], [LANE_X, y - 4, LID_TOP-6], [LANE_X + 1, y - 10, DKZ+14]];
 cable({a:port(HW.ina, inaPin(5)), b:port(HW.jet, PORT.jetson.barrel), mat:M.wpos, r:R16,
        sag:6, slack:.10, floor:DFLOOR,
        hw:[[inlineCyl(FUSE_R, D.fuse_holder_inline.body_len, M.fuse), 3],
            [inlineBox(19, 15, 14, M.swbody), 5]],
-       via:[[-76, -46, LID_TOP-2], [-70, -54, 110], [-62, -58, DKZ+8],
+       via:[...offLid(-38), [FU[0] + 3, FU[1] + 10, DKZ+3],
             [FU[0], FU[1], DECK + FUSE_R],       // z = its own radius, so the holder rests on the shell
             [-18, -62, DKZ+4],
             [SW[0], SW[1], DECK + 7],            // z = half the switch body, likewise
-            [26, -58, DKZ+4], [50, -46, PZ+6], [59, -37, PZ+10]]});
+            [22, -58, DKZ+4], [36, -46, DKZ+6], [JX - 50, -38, PZ+8]]});
 
 // 7. BMS P- -> Jetson barrel jack, the return conductor of the same pigtail.
 cable({a:port(HW.bms, bmsPad(BMS.pads_round.Pminus)), b:port(HW.jet, PORT.jetson.barrel_neg), mat:M.wneg, r:R16,
        sag:6, slack:.10, floor:DFLOOR,
-       via:[[-78, -2, LIDZ-2], [-74, -20, LIDZ-2], [-71, -38, LID_TOP-4], [-66, -50, 106],
-            [-60, -62, DKZ+7], [-28, -68, DKZ+4], [8, -68, DKZ+4], [36, -60, DKZ+4],
-            [52, -46, PZ+4], [57, -38, PZ+6]]});
+       via:[[XC + 8, -8, LIDZ], [LID_IN + 3, -30, LIDZ-1], ...offLid(-40).slice(1),
+            [-34, -66, DKZ+4], [-6, -68, DKZ+4], [22, -64, DKZ+4], [36, -50, DKZ+5], [JX - 52, -38, PZ+5]]});
 
 // 8. INA219 SDA/SCL/VCC/GND -> Jetson 40-pin header, pins 27/28 with 3V3 on 17 and GND on 25.
-//    22 AWG jumpers bundled 2x2 along the rear deck and up the Jetson plate's outboard edge, which
-//    is the side the header sits on once the board is turned I/O-inboard.
-const i2cRun = [[-72, -30, LIDZ-3], [-66, -42, LID_TOP-8], [-60, -52, 104], [-56, -64, DKZ+6],
-                [-24, -72, DKZ+3], [16, -74, DKZ+3], [56, -76, DKZ+3], [92, -80, DKZ+3],
-                [118, -76, PZ+4], [136, -66, PZ+7], [143, -46, PZ+13], [143, -28, PZ+16]];
+//    22 AWG jumpers bundled 2x2 off the lid, along the rear deck behind the Jetson plate and up its
+//    outboard edge, which is the side the header sits on once the board is turned I/O-inboard.
+const i2cRun = [[XC + 14, -30, LIDZ], ...offLid(-44),
+                [-30, -72, DKZ+3], [16, -74, DKZ+3], [56, -70, DKZ+3], [JX, -64, DKZ+3],
+                [JX + 28, -58, PZ+10], [JX + 34, -56, PZ+24], [JX + 36, -40, PZ+33], [JX + 36, -14, PZ+32]];
 const i2c = [[0, 17, M.wpos], [1, 25, M.wneg], [2, 28, M.wdata2], [3, 27, M.wdata]];   // VCC GND SCL SDA
 const i2cOff = [[-1.4, 0, 1.4], [1.4, 0, 1.4], [-1.4, 0, -1.4], [1.4, 0, -1.4]];
 i2c.forEach((w, i) => cable({a:port(HW.ina, inaPin(w[0])), b:port(HW.jet, jPin(w[1])), mat:w[2], r:R22,
        sag:7, slack:.11, floor:DFLOOR, off:i2cOff[i], via:i2cRun}));
 
-// 9. Jetson USB 3.1 -> RealSense D435i.  Off the rocker at ports.loom.camera_lane, then aft across
-//    the front plate and up the open deck to the Jetson's inboard I/O edge - no mast to climb.
+// 9. Jetson USB 3.1 -> RealSense D435i.  Off the Jetson's inboard I/O edge, forward up the open
+//    deck beside the DROK, across the front plate at ports.loom.camera_lane and up the back of the
+//    rocker to the camera's rear face - no mast to climb.
 const CL = PORT.loom.camera_lane;
 cable({a:port(HW.jet, PORT.jetson.usb_upper), b:port(HW.cam, PORT.camera.usb_c), mat:M.wusb, r:RUSB,
        sag:4, slack:.09, floor:PZ+2,
-       via:[[54, 14, PZ+18], [50, 30, PZ+10], [48, 46, PZ+7], [48, 62, PZ+6], [44, 80, PZ+7],
-            [CL[0], CL[1], PZ+9], [CL[0]-3, CL[1]+9, PZ+15]]});
+       via:[[JX - 44, 22, PZ+16], [JX - 48, 36, PZ+10], [46, 50, PZ+7], [44, 66, PZ+6], [42, 84, PZ+7],
+            [CL[0], CL[1], PZ+10], [CL[0]-4, CL[1]+2, PZ+20]]});
 
 // 10. Jetson USB 2.0 -> FTDI -> Roomba mini-DIN, rear right under its snap-away guard.
 cable({a:port(HW.jet, PORT.jetson.usb_lower), b:port(HW.shell, D.roomba_690.minidin_position), mat:M.wusb, r:RUSB,
        sag:5, slack:.09, floor:DFLOOR,
-       via:[[52, 10, PZ+12], [48, -12, PZ+6], [48, -36, DKZ+4], [52, -58, DKZ+3], [66, -74, DKZ+3],
+       via:[[JX - 44, 10, PZ+12], [JX - 48, -12, PZ+6], [JX - 48, -36, DKZ+4], [JX - 44, -58, DKZ+3], [66, -74, DKZ+3],
             [92, -84, DKZ+2], [112, -90, DECK+2], [118, -94, DECK-8]]});
 
 document.getElementById('chk-harness').addEventListener('change', e => {
@@ -643,9 +672,11 @@ list.querySelectorAll('[data-all]').forEach(b => b.addEventListener('click', () 
   dirty(); }));
 const bought = parts.filter(p => p.userData.kind === 'ref' && p.name !== 'roomba' && p.name !== 'dock');
 // Catalogue masses, so this is the BOUGHT total only; hardware/verify.py weighs the printed
-// geometry as well and puts the whole payload at 989 g with its centre 1.9 mm off the centreline.
-document.getElementById('mass').textContent = bought.reduce((s,p) => s + (p.userData.mass||0), 0)
-  + ' g bought + ~115 g printed';
+// geometry as well and (layout._balance, after the 2026-09-22 rework) puts the whole payload at
+// 977 g with its centre 1.5 mm left of and 3.7 mm ahead of the wheel centreline.  The printed share
+// shown is that figure less the catalogue total, so the two always add up to verify.py's.
+const PAYLOAD_G = 977, BOUGHT_G = bought.reduce((s,p) => s + (p.userData.mass||0), 0);
+document.getElementById('mass').textContent = BOUGHT_G + ' g bought + ~' + (PAYLOAD_G - BOUGHT_G) + ' g printed';
 document.getElementById('nb').textContent = bought.length; document.getElementById('np').textContent = parts.filter(p => p.userData.kind==='print').length;
 
 // ------------------------------------------------------------ render on demand
@@ -681,48 +712,52 @@ applyTheme(); resize(); place();
   for (const g of parts) byId[g.name] = g;
   const moverFor = id => (id === 'rocker' || id === 'camera') ? camPivot : byId[id];
 
+  // Captions read live values where a number is a dimension, so they cannot drift from the model
+  // again; prose-only figures (the raycast band, the corner radii) are quoted from dimensions.json.
+  const HB = D.deck_measured.hub, LM = D.deck_measured.limits, CAM = D.frame.camera, BAT = D.frame.battery;
+  const PK = D.ovonic_3s_8000, BUILD_H = LID_TOP + D.ports.ina219.header_z;   // off the floor: the INA219's header pin tops
   const STEPS = [
     {t:'The stock robot', v:'iso', add:['roomba'], r:780, c:
-     'A Roomba 690, 330 mm across. Its deck is flat at 83 mm from y −116 all the way to +144 — measured, not taken from the spec. The only thing standing above it is the front IR boss at 90.9 mm, which is what the OI document’s 92.25 actually describes.'},
+     `A Roomba 690, 330 mm across. The frame is fitted to its top deck as measured off this robot, not the spec: flat at ${DECK} mm out to r ${D.deck_measured.flat_r}, then a ${D.deck_measured.ring_h} mm raised ring (grey) to r ${D.deck_measured.ring_r1.toFixed(1)}. Past the ring is the bumper, which moves - so nothing goes beyond r ${LM.front_r_max.toFixed(1)} in front or ${LM.rear_r_max.toFixed(1)} behind.`},
 
-    {t:'Hub — the first printed part', v:'top', add:['hub'], r:560, c:
-     'A Ø76 ring drops onto the deck around the Clean button. It carries nothing itself: it ties the three carrier tongues together and keeps the button reachable through its Ø60 bore. Its pads stop at r 53 so they miss the Jetson’s connector shells.'},
+    {t:'Hub - the first printed part', v:'top', add:['hub'], r:560, c:
+     `Kieran's own hub, reproduced exactly: a Ø${HB.od} ring, a ${HB.top_h.toFixed(2)} mm plate on the deck, round the Clean button, which stays reachable through its Ø${HB.id.toFixed(0)} bore. It is the ONLY part fastened to the robot - four M3 into the Roomba on the diagonals. Every carrier bolts to one of its three pads and to nothing else.`},
 
-    {t:'Right carrier — Jetson plate', v:'iso', add:['jplate'], r:660, c:
-     'Carrier one, at 90°. Watch the approach: it comes down outboard first, then slides in — because its tongue has to pass under the hub. It lands on two of the chassis’s own screw bosses. No adhesive anywhere on this robot.'},
+    {t:'Right carrier - Jetson plate', v:'iso', add:['jplate'], r:660, c:
+     `Carrier one, at 0°. Its tongue drops onto the hub's right pad and takes the pad's two M3 flat heads, countersunk flush; a 45° ramp then steps it down ${HB.top_h.toFixed(2)} mm to a plate lying flat on the deck. Those two bolts are the whole attachment - no chassis bosses, no adhesive.`},
 
     {t:'Jetson Xavier NX', v:'iso', add:['jetson'], r:620, c:
-     'Onto four M3 standoffs, 6 mm tall. Six, not the five the spec implies: NVIDIA’s own CAD puts components 4.56 mm below the PCB, so 5 mm standoffs would have set the board down on its own capacitors.'},
+     `Onto four M3 standoffs, ${D.frame.jetson.standoff_h} mm tall, board centre at x ${L.jetson_center[0]} - as far out as the front limit allows. That puts the I/O edge's underside parts (NVIDIA's CAD has them 4.55 mm below the PCB) straight over the tongue and its bolt, so the standoffs went from 6 to ${D.frame.jetson.standoff_h} to carry them clear of the flush tongue top.`},
 
-    {t:'Left carrier — battery cradle', v:'iso', add:['cradle'], r:660, c:
-     'Carrier two, at 180°, mirroring the Jetson plate and fitting the same way. Walls 3 mm, floor 2.5, and the box is cut 34 mm deep — the hard case’s full height rather than the soft pack’s, so either version of the battery drops in.'},
+    {t:'Left carrier - battery cradle', v:'iso', add:['cradle'], r:660, c:
+     `Carrier two, at 180°, mirroring the Jetson plate and fitting the same way. Walls ${BAT.wall} mm, floor ${BAT.floor}, and the pocket is exactly ${PK.design_l} × ${PK.design_w} × ${PK.design_h} mm - Kieran's padded pack, with no added clearance: the padding is the fit. Its outer corners land at r 124.9, all on the flat.`},
 
     {t:'Ovonic 3S 8000 mAh', v:'iso', add:['lipo'], r:620, c:
-     'The pack lies on its side in the cradle. Four external lugs take a strap of about 141 mm girth; the first design ran the strap slots through the floor, which was useless once the cradle sat flat on the deck.'},
+     `The pack stands on its side, ${PK.design_h.toFixed(1)} mm tall and ${PK.design_w.toFixed(1)} across, leads to the front. Two straps at y ±${BAT.strap_y} come over the lid, down the outside of the walls and through lugs 3 mm off the deck - the cradle lies flat, so a strap cannot pass under it.`},
 
     {t:'Cradle lid', v:'iso', add:['lid'], r:600, c:
-     'A cap, not an inset panel: a 2.5 mm lip inside a 6 mm skirt that reaches down over the full-height walls. It closes the box and becomes the shelf for the pack electronics.'},
+     `A cap, not an inset panel: a ${BAT.lid_skirt} mm skirt drops over the full-height walls, so the lid bears on the walls and not on the cells. It is ${BAT.lid_w} mm wide, wider than the skirt, because the BMS and its ties need it and the overhang carries the strap slots. It closes the box and becomes the shelf for the pack electronics.`},
 
     {t:'BMS and current monitor', v:'iso', add:['bms','ina'], r:600, c:
-     'The Daier 3S BMS and the INA219 land on top of the lid, one after the other. Note where the whole left carrier stops: nothing on this robot goes aft of y −38 except the hub, which is the only reason the dust bin still slides out.'},
+     'The Daier 3S BMS and the INA219 land on top of the lid, one after the other, between the straps. This is the top of the machine: the INA219’s top, ' + BUILD_H.toFixed(1) + ' mm off the floor, is the highest point of the build. Between the two side carriers nothing goes aft of the hub, which is why the dust bin still slides out.'},
 
     {t:'Front carrier', v:'iso', add:['fplate'], r:680, c:
-     'Carrier three, at 0°, same tongue-under-the-hub approach. It reaches y 144 — the last of the flat deck — and carries both the charger and the camera cheeks. The rear quadrant stays deliberately empty.'},
+     `Carrier three, at 90°, same tongue-on-the-pad fit. Only ${2*D.frame.front.half_w_inboard} mm wide at its inboard end, to clear the cradle's front corner; ${2*D.frame.front.half_w} at the camera cheeks. It carries both the charger and the cheeks, and is clipped so nothing passes the ring's outer edge - the bumper is right there. The rear quadrant stays deliberately empty.`},
 
     {t:'DROK buck converter', v:'top', add:['drok'], r:560, c:
-     'Rotated 180°, and that rotation is load-bearing: it puts the input 31 mm from the deck grommet instead of 93, and turns the output to face the battery. At 0° the buck fed backwards across the whole robot.'},
+     `Centred at y ${D.frame.front.drok_center_y}, rotated 180°, and that rotation is load-bearing: it puts the input about 24 mm from the deck grommet instead of about 85, and turns the output to face the battery. At 0° the buck fed backwards across the whole robot.`},
 
     {t:'Camera', v:'front', add:['rocker','camera'], r:560, c:
-     'The D435i sits in a rocker between the cheeks, optical centre at z 110. That height is derived, not chosen — it is the lowest mounting at which the front IR boss only occludes floor already nearer than the sensor’s 175 mm minimum range. The pivot is two M3 stubs, one per side, because the bracket is 116 mm across and the longest screw on hand is M3×30.'},
+     `The D435i sits in a rocker between the cheeks: pivot at y ${CAM.pivot_y}, optical centre ${(DECK + CAM.pivot_z).toFixed(0)} mm off the floor. The pivot is as far forward as the front limit allows at full tilt, and ${(DECK + CAM.pivot_z).toFixed(0)} is the lowest height at which the robot's own front edge hides no more floor than before - a 194–227 mm band, starting at the sensor's 195 mm Min-Z. The pivot is two M3 stubs, one per side, because the bracket is 116 mm across and the longest screw on hand is M3×30.`},
 
     {t:'Charge pads', v:'under', add:['pads'], r:640, c:
-     'Underneath now — the carrier rises straight up into the chassis at y 100, pockets down. It prints pockets-up and installs flipped. This is the only part of the build you fit with the robot upside down.'},
+     'Underneath now — the carrier rises straight up into the chassis at y ' + L.pads_center_y + ', pockets down. It prints pockets-up and installs flipped. This is the only part of the build you fit with the robot upside down.'},
 
     {t:'Dock contacts', v:'side', add:['dock','pinblock'], r:860, c:
-     'The Home Base rolls in from ahead and its pogo block comes up to meet the pads. The pair only mates with the robot nose-up on the ramp at 2.30°, which is the pitch this whole view is drawn at: 6 mm of block plus 3.5 mm of carrier is 9.5 mm against 8 mm of ground clearance, so level, they would interfere. Still flagged unresolved pending a measurement of the real ramp.'},
+     'The Home Base rolls in from ahead and its pogo block comes up to meet the pads. The pair only mates with the robot nose-up on the ramp at ' + (DOCK_PITCH*180/Math.PI).toFixed(2) + '°, which is the pitch this whole view is drawn at: ' + D.frame.dock_block[2] + ' mm of block plus ' + D.frame.pad_carrier[2] + ' mm of carrier is ' + (D.frame.dock_block[2] + D.frame.pad_carrier[2]) + ' mm against ' + L.chassis_clearance + ' mm of ground clearance, so level, they would interfere. Still flagged unresolved pending a measurement of the real ramp.'},
 
     {t:'Wiring', v:'iso', add:['harness'], r:720, secs:9, c:
-     'Last, and slowest — every conductor draws itself in along its real routed path, in the order you would build it. Pack to BMS, out through the fuse, the switch and the INA219 to the DROK, then the Jetson’s barrel jack; the camera takes USB-C up the front lane. The fuse sits ahead of the switch so the whole run is protected — with the source on the left, the other order left that leg live and unfused.'}
+     'Last, and slowest — every conductor draws itself in along its routed path, in the order you would build it: dock pads up through the grommet to the DROK, the DROK into the BMS, the pack’s T-plug and balance tail out through the cradle’s lead notch to the BMS, then P+ through the INA219’s shunt, the fuse and the switch across the empty rear deck to the Jetson’s barrel jack, with I2C beside it and USB to the camera and the mini-DIN. The fuse sits ahead of the switch, nearest the source, so the whole run is protected. Connector positions are estimates (dimensions.json ports).'}
   ];
 
   const N = STEPS.length;
@@ -736,21 +771,23 @@ applyTheme(); resize(); place();
   // `out` is the direction a part flies in from, in its own parent's frame; `lift` is how
   // high above the seat it hangs first.  Splitting the move into a lateral leg and a
   // vertical leg is what keeps parts out of each other - nothing travels sideways at seat
-  // height, where the walls are.  Two modes, because two situations:
-  //   drop  - across, then straight down into the seat.  Everything that lands on a face.
-  //   slide - down outboard first, THEN in.  The three carriers, whose tongues have to
-  //           pass UNDER the hub; dropping them vertically would drive a tongue through it.
+  // height, where the walls are.  Two modes:
+  //   drop  - across, then straight down into the seat.  Everything that lands on a face,
+  //           including the three carriers: each tongue lies ON TOP of its hub pad, so it
+  //           comes down onto the pad from above.
+  //   slide - down outboard first, THEN in.  Kept for anything that has to pass under
+  //           something already fitted; nothing in the current build does.
   const ENTRY = {
     roomba:   {mode:'fade'},
     hub:      {out:[0,0,0], lift: 72},
-    jplate:   {out:[1,0,0], lift: 58, mode:'slide'},
+    jplate:   {out:[1,0,0], lift: 58},
     jetson:   {out:[1,0,0], lift: 78},
-    cradle:   {out:[1,0,0], lift: 58, mode:'slide'},
+    cradle:   {out:[1,0,0], lift: 58},
     lipo:     {out:[1,0,0], lift: 84},
     lid:      {out:[1,0,0], lift: 78},
     bms:      {out:[1,0,0], lift: 62},
     ina:      {out:[1,0,0], lift: 62},
-    fplate:   {out:[1,0,0], lift: 58, mode:'slide'},
+    fplate:   {out:[1,0,0], lift: 58},
     drok:     {out:[1,0,0], lift: 66},
     camPivot: {out:[1,0,0], lift: 74},
     pads:     {out:[0,0,0], lift:-72},

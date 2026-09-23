@@ -171,9 +171,8 @@ not the Create 2 CAD, which is now display-only:
 
 ![Top-down view of the three carriers -- front plate with the camera rocker, Jetson plate and battery cradle -- around the central hub](hardware/preview/assembly_top.png)
 
-The two renders above predate the measured-deck rebuild (they still show the old
-chassis-boss ears and a flat-lying pack); rerun `build_viewer.py` for a view of
-the current geometry.
+Both renders come from `hardware/render_previews.py` (about 4 s for all 13);
+rerun it after any geometry change.
 
 - `gen.py` writes `dims.scad`, which `roomba_nx.scad` includes. Export a part
   with `openscad -D 'part="hub"' -o stl/hub.stl roomba_nx.scad` (parts: hub,
