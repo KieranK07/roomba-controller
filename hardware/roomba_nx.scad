@@ -3,12 +3,24 @@
 // Every dimension comes from dimensions.json via gen.py -> dims.scad.
 // Robot frame: origin at the Roomba centre on the floor, +X right, +Y forward, +Z up.
 //
+// WHERE THE GEOMETRY COMES FROM.  The top deck is MEASURED (deck_measured: Kieran's CAD person
+// modelled his own 690, faceplate off).  The deck is flat out to r 135.26, a 3.3 mm ring runs
+// out to r 144.42, and past that is the bumper, which moves.  The frame fastens to the robot at
+// ONE place - Kieran's hub, reproduced exactly from that CAD - and every carrier bolts to the hub
+// and nothing else.  No chassis screw bosses, no Create 2 CAD placement.
+//
 // CARRIER FRAME.  The three carriers are each drawn in their own local frame: origin still at
 // the robot centre, but on the DECK plane (z = 0 means z = 82.94), and +X pointing outboard
 // along that carrier's own axis.  assembly() just rotates each one by its layout angle.  So
-// every r0 / r1 below is a radius from the robot's centre and can be read straight against the
-// chassis screw-boss table, and the exported STL of, say, the battery cradle sits 62 mm off its
-// own origin.  That is deliberate: the number in the file is the number on the robot.
+// every r0 / r1 below is a radius from the robot's centre and can be read straight against
+// deck_measured.flat_r and the limits, and the exported STL of, say, the battery cradle sits
+// 56 mm off its own origin.  That is deliberate: the number in the file is the number on the robot.
+//
+// LEGAL ENVELOPE.  Every carrier is intersected with legal_envelope() - deck_measured.limits
+// shrunk by frame.envelope_margin - so whatever the plates are drawn as, nothing that rests on
+// the deck passes the flat, nothing passes the ring low enough to touch it, and nothing passes
+// the bumper line.  The rocker tilts, so it cannot be clipped; it is sized by hand instead and
+// checked over its whole tilt range.
 //
 // Export one part:   openscad -D 'part="hub"' -o stl/hub.stl roomba_nx.scad
 // Full assembly:     openscad -D 'part="assembly"' -D explode=40 ...
@@ -24,21 +36,28 @@ $fn     = 72;
 
 // ---------------------------------------------------------------- shorthand --
 R    = roomba_690_diameter / 2;
-DECK = roomba_690_deck_height;          // the flat top the frame lies on; 92.25 is only the IR boss
+DECK = roomba_690_deck_height;          // the flat top the frame lies on
 Z0   = layout_chassis_clearance;        // underside of the chassis
 M3   = print_m3_clearance_d;
 M3T  = print_m3_tap_d;
+CSK  = print_m3_csk_d;                  // countersink for an M3 flat head
 CL   = print_fit_clearance;
 E    = 0.01;
 
-HT   = frame_hub_t;                     // hub ring thickness; the carrier tongues lie on top of it
+HT   = deck_measured_hub_top_h;         // Kieran's hub plate: the carrier tongues lie on top of it
 PT   = frame_carrier_plate_t;           // carrier plate, flat on the deck
 TW   = frame_carrier_tongue_w;
 TR0  = frame_carrier_tongue_r0;
-TR1  = frame_carrier_tongue_r1;
 TT   = frame_carrier_tongue_t;
-RR1  = frame_carrier_ramp_r1;           // where the ramp finishes and the deck-level plate starts
 CR   = frame_carrier_corner_r;
+PAD_SIDE  = deck_measured_hub_side_pad_r1;     // where each tongue ends: the end of its hub pad
+PAD_FRONT = deck_measured_hub_front_pad_r1;
+function ramp_end(pad_r1) = pad_r1 + HT;       // 45 deg ramp, down the hub's own thickness
+
+assert(layout_carrier_angles == deck_measured_hub_pad_angles, "carriers must sit on the hub's pads");
+assert(abs(frame_jetson_r0  - ramp_end(PAD_SIDE))  < 1e-3, "jetson r0 must be the side ramp's end");
+assert(abs(frame_battery_r0 - ramp_end(PAD_SIDE))  < 1e-3, "battery r0 must be the side ramp's end");
+assert(abs(frame_front_r0   - ramp_end(PAD_FRONT)) < 1e-3, "front r0 must be the front ramp's end");
 
 PIV_X = frame_camera_pivot_y;           // carrier-local: outboard distance to the pivot axis
 PIV_Z = frame_camera_pivot_z;           // above the deck.  DECK + this = the D435i's optical centre
@@ -49,13 +68,22 @@ RAMP_ANG   = atan(home_base_ramp_h / home_base_ramp_d);
 CASTER_Y   = roomba_690_caster_position[1];
 DOCK_PITCH = asin(((CASTER_Y - DOCK_Y) / home_base_ramp_d * home_base_ramp_h) / CASTER_Y);
 
-// pack pocket, cradle-local: long axis along local Y
-PACK_L = ovonic_3s_8000_design_l;
-PACK_W = ovonic_3s_8000_design_w;
-PACK_H = ovonic_3s_8000_design_h;
-CRAD_W = frame_battery_outer[0];        // 52, local X
-CRAD_L = frame_battery_outer[1];        // 149, local Y
-CRAD_X = frame_battery_r0 + CRAD_W/2;   // 88: outboard centre of the cradle
+// pack pocket, cradle-local: long axis along local Y.  Kieran's padded pack, cut to exactly.
+PACK_L = ovonic_3s_8000_design_l;       // 147.32, local Y
+PACK_W = ovonic_3s_8000_design_w;       // 34.65, across the cradle (local X)
+PACK_H = ovonic_3s_8000_design_h;       // 42.33, tall
+CRAD_W = frame_battery_outer[0];        // 40.65, local X
+CRAD_L = frame_battery_outer[1];        // 153.32, local Y
+CRAD_X = frame_battery_r0 + CRAD_W/2;   // 76.44: outboard centre of the cradle
+assert(abs(CRAD_W - (PACK_W + 2*frame_battery_wall)) < 1e-3 && abs(CRAD_L - (PACK_L + 2*frame_battery_wall)) < 1e-3,
+       "frame.battery.outer must be the pack plus two walls");
+assert(abs(frame_battery_wall_h - PACK_H) < 1e-3, "the walls stand exactly as tall as the pack");
+
+// the limits, shrunk by the margin (deck-plane heights)
+ENV_ON = deck_measured_limits_on_deck_r_max - frame_envelope_margin;          // resting on the flat
+ENV_Z  = deck_measured_limits_over_ring_underside_min + frame_envelope_margin; // lowest a part may be past ENV_ON
+ENV_F  = deck_measured_limits_front_r_max - frame_envelope_margin;           // y >= 0
+ENV_R  = deck_measured_limits_rear_r_max  - frame_envelope_margin;           // y <  0
 
 module m3(h, d = M3) { cylinder(h = h, d = d); }
 
@@ -106,123 +134,133 @@ module prism_y(pts, y0, t) {
 
 // ================================================================= PRINTED ==
 
-// --- hub: a plain ring clearing the Clean button, with three radial pads the carrier tongues
-//     bolt down onto.  The nuts live in hex pockets in the pads' undersides, trapped between the
-//     hub and the Roomba's shell, so no printed thread carries the joint. --
+// --- the legal envelope, robot frame, deck plane at z = 0.  Out to ENV_ON a part may rest on the
+//     flat.  Past it the part has to be at least ENV_Z up (clear of the 3.3 mm ring), and from
+//     there a 45 deg cone widens it out to the front or rear radius limit - the cone rather than
+//     a step so a clipped part never has a flat overhang to print.  Cylinders and cones only, so
+//     it survives the CSG -> STEP trip as analytic faces like everything else. --
+module envelope_half(rmax) {
+  cylinder(h = 300, r = ENV_ON, $fn = 360);
+  translate([0, 0, ENV_Z]) cylinder(h = rmax - ENV_ON, r1 = ENV_ON, r2 = rmax, $fn = 360);
+  translate([0, 0, ENV_Z + rmax - ENV_ON]) cylinder(h = 300, r = rmax, $fn = 360);
+}
+module legal_envelope() {
+  intersection() { envelope_half(ENV_F); translate([-400, 0,    -1]) cube([800, 400, 400]); }
+  intersection() { envelope_half(ENV_R); translate([-400, -400, -1]) cube([800, 400, 400]); }
+}
+// A carrier drawn in its local frame, clipped to the envelope turned into that same frame.
+module clip_to_envelope(a) { intersection() { children(); rotate(-a) legal_envelope(); } }
+
+// --- hub: Kieran's part, reproduced exactly from roomba_top_deck.step - do not redesign it.  A
+//     3.26 mm plate standing on the deck: a ring clear of the Clean button and three flat-ended
+//     pads the carrier tongues lie on, two holes each.  The four diagonal holes are where it is
+//     screwed to the Roomba; their positions are an ESTIMATE until his CAD models them.  No nut
+//     pockets: a 3.26 mm plate on the deck has no room for one. --
 module hub() {
-  od = frame_hub_od; id = frame_hub_id; pw = frame_hub_pad_w; pr = frame_hub_pad_r1;
+  h = deck_measured_hub_top_h;
   difference() {
     union() {
-      cylinder(h = HT, d = od);
-      for (a = layout_carrier_angles) rotate(a)
-        translate([0, -pw/2, 0]) cube([pr, pw, HT]);
-    }
-    translate([0, 0, -E]) cylinder(h = HT + 2*E, d = id);
-    for (a = layout_carrier_angles) rotate(a) for (r = frame_hub_hole_r) {
-      translate([r, 0, -E]) m3(HT + 2*E);
-      translate([r, 0, -E]) cylinder(h = frame_hub_nut_h + E, d = frame_hub_nut_af / cos(30), $fn = 6);
-    }
-  }
-}
-
-// --- the tongue every carrier starts with: a 4 mm strap lying on the hub pad, then a 45 degree
-//     ramp down to the plate that lies flat on the deck.  That step is the whole design. --
-module carrier_tongue() {
-  difference() {
-    union() {
-      translate([TR0, -TW/2, HT]) cube([TR1 - TR0, TW, TT]);
-      // Ramp, hub level -> deck level.  Was hull() of an E-wide slab at [TR1, HT..HT+TT] and one at
-      // [RR1, 0..PT]; that hull is exactly this hexagon swept the tongue's width.  The two E-long
-      // steps are not slop: they are the back faces of those slabs, and the hull kept them too.
-      prism_y([[RR1, 0], [RR1, PT], [TR1, HT + TT], [TR1 - E, HT + TT], [TR1 - E, HT], [RR1 - E, 0]],
-              -TW/2, TW);
-    }
-    for (r = frame_hub_hole_r) translate([r, 0, HT - E]) m3(TT + 2*E);
-  }
-}
-
-// --- a diagonal ear from the plate edge out to a chassis screw boss.  t = [bx, by, ax, ay]. --
-// An obround: the two end discs plus the w-wide bar between their centres, laid along the tab's own
-// angle.  Same shape as hull() of the two discs, but analytic, so it exports as cylinders and a box.
-// Several tabs have both ends at the same point (the ear IS the boss); those are a single disc.
-module boss_tab(t) {
-  w = frame_carrier_boss_tab_w;
-  L = norm([t[2] - t[0], t[3] - t[1]]);          // centre distance
-  difference() {
-    union() {
-      translate([t[0], t[1], 0]) cylinder(h = PT, d = w);
-      if (L > 0) {
-        translate([t[2], t[3], 0]) cylinder(h = PT, d = w);
-        translate([t[0], t[1], 0]) rotate(atan2(t[3] - t[1], t[2] - t[0]))
-          translate([0, -w/2, 0]) cube([L, w, PT]);
+      cylinder(h = h, d = deck_measured_hub_od);
+      for (a = deck_measured_hub_pad_angles) rotate(a) {
+        w  = a == 90 ? deck_measured_hub_front_pad_w  : deck_measured_hub_side_pad_w;
+        r1 = a == 90 ? deck_measured_hub_front_pad_r1 : deck_measured_hub_side_pad_r1;
+        translate([0, -w/2, 0]) cube([r1, w, h]);
       }
     }
-    translate([t[0], t[1], -E]) m3(PT + 2*E);
+    translate([0, 0, -E]) cylinder(h = h + 2*E, d = deck_measured_hub_id);
+    for (a = deck_measured_hub_pad_angles, r = deck_measured_hub_hole_r)
+      rotate(a) translate([r, 0, -E]) cylinder(h = h + 2*E, d = deck_measured_hub_hole_d);
+    for (a = deck_measured_hub_mount_holes_angles)
+      rotate(a) translate([deck_measured_hub_mount_holes_r, 0, -E])
+        cylinder(h = h + 2*E, d = deck_measured_hub_mount_hole_d);
   }
 }
-module boss_holes(tabs) { for (t = tabs) translate([t[0], t[1], -E]) m3(PT + 2*E); }
+
+// --- the tongue every carrier starts with: a 4 mm strap lying on its hub pad out to the pad's
+//     end, then a 45 degree ramp down the hub's 3.26 mm to the plate lying flat on the deck.  The
+//     two bolts are countersunk flat heads so the tongue's top stays flush at deck + 7.26 - the
+//     Jetson's I/O overhang passes 1.2 mm over the r 49 one. --
+module carrier_tongue(pad_r1) {
+  rr1 = ramp_end(pad_r1);
+  cs  = (CSK - M3) / 2;                                  // depth of a 90 deg countersink
+  difference() {
+    union() {
+      translate([TR0, -TW/2, HT]) cube([pad_r1 - TR0, TW, TT]);
+      // Ramp, hub level -> deck level: the hexagon hull() of an E-wide slab at [pad_r1, HT..HT+TT]
+      // and one at [rr1, 0..PT] would make, swept the tongue's width.  The two E-long steps are
+      // the back faces of those slabs.
+      prism_y([[rr1, 0], [rr1, PT], [pad_r1, HT + TT], [pad_r1 - E, HT + TT], [pad_r1 - E, HT], [rr1 - E, 0]],
+              -TW/2, TW);
+    }
+    for (r = deck_measured_hub_hole_r) translate([r, 0, HT - E]) {
+      m3(TT + 2*E);
+      translate([0, 0, TT + E - cs]) cylinder(h = cs + E, d1 = M3, d2 = CSK);
+    }
+  }
+}
 
 // --- jetson plate: the carrier board on four tapped standoffs.  Board 100 mm axis along robot Y,
-//     I/O edge facing inboard so every connector presents to the open deck. --
+//     I/O edge facing inboard so every connector presents to the open deck.  The board is as far
+//     outboard as the front limit lets its corner go; that puts the I/O overhang over the tongue,
+//     hence 9 mm standoffs.  Hangs off the hub's two bolts and rests on the deck. --
 module jetson_plate() {
   r0 = frame_jetson_r0; r1 = frame_jetson_r1; hw = frame_jetson_half_w;
   bw = jetson_xavier_nx_devkit_board_w; bd = jetson_xavier_nx_devkit_board_d;
   bx = layout_jetson_center[0]; sh = frame_jetson_standoff_h; v = frame_jetson_vent;
   // board hole (u along the 100 mm edge, v along the 79) -> carrier-local, board turned 90 deg
   function jm(h) = [bx - (h[1] - bd/2), h[0] - bw/2];
-  difference() {
+  clip_to_envelope(layout_carrier_angles[0]) difference() {
     union() {
-      carrier_tongue();
+      carrier_tongue(PAD_SIDE);
       translate([r0, -hw, 0]) rounded_box([r1 - r0, 2*hw, PT], 12);
-      for (t = frame_jetson_boss_tabs) boss_tab(t);
       for (h = jetson_xavier_nx_devkit_mount_holes)
         translate(jm(h)) cylinder(h = PT + sh, d = print_standoff_od);
     }
     for (h = jetson_xavier_nx_devkit_mount_holes)
       translate(concat(jm(h), [PT])) cylinder(h = sh + E, d = M3T);
-    boss_holes(frame_jetson_boss_tabs);
-    for (s = [-1, 1]) translate([bx + s * 22, 0, -E])                     // airflow under the module
+    for (x = frame_jetson_vent_x) translate([bx + x, 0, -E])                // airflow under the module
       rounded_box_c([v[0], v[1], PT + 2*E], 6);
   }
 }
 
-// --- battery cradle: open-top box cut for the HARD-case envelope so either pack drops in.
+// --- battery cradle: open-top box cut to exactly Kieran's padded pack, standing on its side.
 //     Long axis local Y; leads leave the inboard-front end, right under the lid-mounted BMS. --
 module battery_cradle() {
   w = frame_battery_wall; fl = frame_battery_floor; hh = frame_battery_wall_h;
-  PL = CRAD_L - 2*w; PW = CRAD_W - 2*w; ss = frame_battery_strap_slot;
+  ss = frame_battery_strap_slot; sy = frame_battery_strap_y;
+  lt = 8;                                                // lug thickness, outboard of the wall
   difference() {
     union() {
-      carrier_tongue();
+      carrier_tongue(PAD_SIDE);
       translate([CRAD_X, 0, 0]) rounded_box_c([CRAD_W, CRAD_L, fl + hh], CR);
-      for (t = frame_battery_boss_tabs) boss_tab(t);
-      // Strap lugs.  The cradle lies flat on the deck, so there is nothing for a strap to pass
-      // under and the usual floor slots are useless here; each strap goes over the lid, down the
-      // outside of both walls and through one of these instead.
+      // Strap lugs, one per strap per side.  The cradle lies flat on the deck, so a strap cannot
+      // pass under it; each strap comes over the lid, down the outside of the wall and through the
+      // vertical slot in one of these, round under its outer bar (3 mm off the deck) and back up.
       for (y = [-1, 1], s = [-1, 1])
-        translate([CRAD_X + s * CRAD_W/2 - (s > 0 ? 0 : 5), y * 40 - 13, 2])
-          cube([5, 26, 13]);
+        translate([CRAD_X + s * CRAD_W/2 - (s > 0 ? 0 : lt), y * sy - 13, 3]) cube([lt, 26, 12]);
     }
-    translate([CRAD_X, 0, fl]) rounded_box_c([PW, PL, hh + E], 2);        // the pocket
+    translate([CRAD_X, 0, fl]) rounded_box_c([PACK_W, PACK_L, hh + E], frame_battery_pocket_r);  // the pocket
     for (y = [-1, 1], s = [-1, 1])                                       // the strap slot in each lug
-      translate([CRAD_X + s * (CRAD_W/2 + 3) - 5, y * 40 - ss[0]/2, 6])
-        cube([10, ss[0], ss[1]]);
+      translate([CRAD_X + s * (CRAD_W/2 + 3 + ss[1]/2) - ss[1]/2, y * sy - ss[0]/2, 0])
+        cube([ss[1], ss[0], 20]);
     translate([CRAD_X - 11, -CRAD_L/2 - E, fl + hh - 10])                 // notch for the pack leads
       cube([22, w + 2*E, 10 + E]);
-    boss_holes(frame_battery_boss_tabs);
     for (y = [-45, 0, 45]) translate([CRAD_X, y, -E]) cylinder(h = fl + 2*E, d = 14);   // lightening
   }
 }
 
-// --- battery lid: lies on the pack, located by end skirts, clamped by the same two straps.
-//     Carries the BMS and the INA219, which puts both boards within 40 mm of the cells. --
+// --- battery lid: lies on the pack and the walls, located by a skirt round the wall tops, clamped
+//     by the two straps.  Its top is wider than the skirt: the 45 mm BMS and its ties need 58, and
+//     the overhang carries the strap slots just outside the skirt.  Carries the BMS and the INA219
+//     between the straps, which keeps both boards within 40 mm of the cells. --
 module battery_lid() {
   t = frame_battery_lid_t; sk = frame_battery_lid_skirt; lp = frame_battery_lid_lip;
-  cw = CRAD_W + 2*(lp + CL); cl = CRAD_L + 2*(lp + CL);
+  ss = frame_battery_strap_slot; sy = frame_battery_strap_y;
+  cw = CRAD_W + 2*(lp + CL); cl = CRAD_L + 2*(lp + CL); lw = frame_battery_lid_w;
   difference() {
     union() {
-      translate([CRAD_X, 0, 0]) rounded_box_c([cw, cl, t], CR);
-      difference() {                                                      // a lip capping the walls
+      translate([CRAD_X, 0, 0]) rounded_box_c([lw, cl, t], CR);
+      difference() {                                                      // the skirt capping the walls
         translate([CRAD_X, 0, -sk]) rounded_box_c([cw, cl, sk + E], CR);
         translate([CRAD_X, 0, -sk - E]) rounded_box_c([CRAD_W + 2*CL, CRAD_L + 2*CL, sk + 2*E], CR);
       }
@@ -231,22 +269,23 @@ module battery_lid() {
     translate([CRAD_X, frame_battery_ina_center_y, 0]) ziptie_pair(ina219_hiletgo_w + 6);
     for (x = [-10, 10]) translate([CRAD_X + x, frame_battery_ina_center_y, -E]) m3(t + 2*E);
     for (y = [-1, 1], s = [-1, 1])                                        // straps pass through
-      translate([CRAD_X + s * (CRAD_W/2 - 4 - frame_battery_wall) - frame_battery_strap_slot[1]/2,
-                 y * 40 - frame_battery_strap_slot[0]/2, -E])
-        cube([frame_battery_strap_slot[1], frame_battery_strap_slot[0], t + 2*E]);
+      translate([CRAD_X + s * (cw/2 + 0.6 + ss[1]/2) - ss[1]/2, y * sy - ss[0]/2, -E])
+        cube([ss[1], ss[0], t + 2*E]);
     translate([CRAD_X, frame_battery_bms_center_y, -E]) cylinder(h = t + 2*E, d = 16);
     translate([CRAD_X - 11, -cl/2 - E, -sk - E]) cube([22, lp + CL + E, sk + E]);   // lead notch
   }
 }
 
-// --- front plate: DROK at the inboard end, camera cheeks at the outboard end.  Stops 3 mm short
-//     of the front IR boss, and nothing on it stands in front of that boss. --
+// --- front plate: DROK at the inboard end, camera cheeks at the outboard end.  The cheeks' lower
+//     front corners are where the envelope bites: they stand on the flat and lean out over the
+//     ring above ENV_Z, which is where the pivot is. --
 module front_plate() {
-  r0 = frame_front_r0; r1 = frame_front_r1; hw = frame_front_half_w;
+  r0 = frame_front_r0; hw = frame_front_half_w;
   cx = frame_camera_cheek_x; ct = frame_camera_cheek_t; cy = frame_camera_cheek_y;
-  difference() {
+  r1 = cy[1];
+  clip_to_envelope(layout_carrier_angles[1]) difference() {
     union() {
-      carrier_tongue();
+      carrier_tongue(PAD_FRONT);
       translate([r0, -hw, 0]) rounded_box([r1 - r0, 2*hw, PT], 10);
       for (s = [-1, 1]) translate([cy[0], 0, 0])                          // the two cheeks
         wall_at(s, cx, ct, cy[1] - cy[0], frame_camera_cheek_top);
@@ -258,8 +297,9 @@ module front_plate() {
                  [cy[0], frame_camera_cheek_top - 8], [cy[0] - 22, PT]],
                 s > 0 ? cx : -cx - ct, ct);
     }
-    translate([frame_front_drok_center_y, 0, 0]) ziptie_pair(drok_buck_w + 6);
-    boss_holes(frame_front_boss_tabs);
+    // DROK ties run round its 65.6 mm length, so the slots sit off its ends (robot +/-x) rather
+    // than fore and aft, where the inboard one would cut the tongue's ramp.
+    translate([frame_front_drok_center_y, 0, 0]) rotate(90) ziptie_pair(drok_buck_l + 6);
     // Pivot: two M3 stubs, one per side, NOT one long rod - the bracket is 116 mm across and
     // the hardware on hand stops at M3x30.  Clearance in the cheeks, a pilot in the ears.
     translate([PIV_X, 0, PIV_Z]) rotate([90, 0, 0]) translate([0, 0, -100]) m3(200, d = M3);
@@ -272,17 +312,25 @@ module front_plate() {
 }
 
 // --- camera rocker: the D435i bolts on top, the pivot runs THROUGH its optical centre, so
-//     tilting the camera does not move it.  Drawn about the pivot, in the front plate's frame. --
+//     tilting the camera does not move it.  Drawn about the pivot, in the front plate's frame.
+//     Ahead of the pivot each ear is a disc about the pivot, so tilting cannot swing an ear corner
+//     forward into the bumper line; behind it the ear stays square to hold the clamp bolt. --
 module camera_rocker() {
   p = frame_camera_rocker; ex = frame_camera_ear_x; et = frame_camera_ear_t;
   zt = frame_camera_ear_top - PIV_Z;                       // ear top, relative to the pivot
   zb = -realsense_d435i_h/2;                               // plate top = camera underside
-  lo = frame_camera_lock_offset;
+  lo = frame_camera_lock_offset; nr = frame_camera_ear_nose_r;
+  eh = zt - (zb - p[2]);                                   // ear height
   difference() {
     union() {
       translate([0, 0, zb - p[2]]) rounded_box_c([p[1], p[0], p[2]], 3);
-      for (s = [-1, 1]) translate([-p[1]/2, 0, 0])
-        wall_at(s, ex, et, p[1], zt - (zb - p[2]), zb - p[2]);
+      for (s = [-1, 1]) {
+        translate([-p[1]/2, 0, 0]) wall_at(s, ex, et, p[1]/2, eh, zb - p[2]);        // rear: square
+        intersection() {                                                               // front: disc
+          wall_at(s, ex, et, nr, eh, zb - p[2]);
+          rotate([90, 0, 0]) cylinder(h = 200, r = nr, center = true);
+        }
+      }
     }
     rotate([90, 0, 0]) translate([0, 0, -100]) m3(200, d = M3T, $fn = 40);   // pivot, through both ears
     // Clamp bolt, bored through each EAR only.  A full-width bore would run the length of the
@@ -290,7 +338,7 @@ module camera_rocker() {
     for (s = [-1, 1]) translate([lo[0], s * (ex + et/2), lo[1]]) rotate([90, 0, 0])
       cylinder(h = et + 2, d = M3, center = true);
     for (s = [-1, 1]) translate([lo[0], s * (ex + et), lo[1]]) rotate([90, 0, 0])
-      cylinder(h = frame_hub_nut_h * 2, d = frame_hub_nut_af / cos(30), center = true, $fn = 6);
+      cylinder(h = print_m3_nut_h * 2, d = print_m3_nut_af / cos(30), center = true, $fn = 6);
     for (y = [-1, 1]) translate([0, y * realsense_d435i_mount_m3_spacing/2, zb - p[2] - E])
       m3(p[2] + 2*E);
     translate([0, 0, zb - p[2] - E]) cylinder(h = p[2] + 2*E, d = frame_camera_tripod_clearance_d);
@@ -348,7 +396,12 @@ module pad_carrier() {
 module ref_roomba() {
   color("#B9BFC4", 0.55) import("mesh/roomba_690_body.stl");
   color("#E8E8E8") translate([0, 0, DECK - 0.5]) cylinder(h = 1.5, d = roomba_690_clean_button_diameter - 2);
-  for (b = roomba_690_screw_bosses) color("#8C5A2A") translate([b[0], b[1], DECK]) cylinder(h = 1, d = 4.4);
+  // the MEASURED raised ring (the Create CAD shell does not have it) and point A's screw on it
+  color("#8F969C") translate([0, 0, DECK]) difference() {
+    cylinder(h = deck_measured_ring_h, r = deck_measured_ring_r1, $fn = 180);
+    translate([0, 0, -E]) cylinder(h = deck_measured_ring_h + 2*E, r = deck_measured_flat_r, $fn = 180);
+  }
+  color("#8C5A2A") translate(concat(deck_measured_screw_a, [DECK])) cylinder(h = deck_measured_screw_a_h, d = 5);
 }
 
 module ref_jetson() {
@@ -356,10 +409,10 @@ module ref_jetson() {
   color("#2A2E33") import("mesh/jetson_devkit_cooler.stl");
 }
 
-// --- Ovonic 3S soft pack, at the ON-HAND soft-case figures.  The cradle is cut for the larger
-//     hard-case envelope, so what you see here is the pack with its end play. --
+// --- Kieran's pack as he measured it, padding included, standing on its side: exactly the
+//     pocket.  L along x, W (34.65) across, H (42.33) up. --
 module ref_battery() {
-  L = ovonic_3s_8000_l; W = ovonic_3s_8000_w; H = ovonic_3s_8000_h;
+  L = PACK_L; W = PACK_W; H = PACK_H;
   r = ovonic_3s_8000_corner_r;
   color("#2C5BB5") hull() for (x = [-1, 1], y = [-1, 1], z = [0, 1])
     translate([x * (L/2 - r), y * (W/2 - r), r + z * (H - 2*r)]) sphere(r = r, $fn = 40);

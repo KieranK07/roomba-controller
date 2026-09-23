@@ -417,28 +417,32 @@
     "strap_slot": [
       22,
       3
-    ]
+    ],
+    "m3_csk_d": 6.4,
+    "m3_nut_af": 5.5,
+    "m3_nut_h": 2.4,
+    "_m3_csk": "m3_csk_d: the 90 deg countersink for an M3 flat head (ISO 10642 / DIN 7991, 6.0 head + 0.4). m3_nut_af/h: an M3 hex nut, for the camera clamp pocket (moved here from the deleted frame.hub)."
   },
   "layout": {
     "_note": "Component centres in the robot frame (XY, mm). Three carriers at 0 (right, Jetson), 90 (front, camera + DROK) and 180 (left, battery). The rear is empty by design.",
     "jetson_center": [
-      104,
+      95.5,
       0
     ],
     "jetson_rotation": 90,
     "battery_center": [
-      -88,
+      -76.4404,
       0
     ],
     "battery_rotation": 90,
     "camera_pivot": [
       0,
-      130
+      119.5
     ],
     "camera_tilt_deg": -8,
     "drok_center": [
       0,
-      86
+      78
     ],
     "pads_center_y": 100,
     "pads_z": 0,
@@ -453,123 +457,73 @@
     "_drok_note": "180, not 0. ref_drok() puts the input terminals at its local +y and the outputs at -y; through the front carrier's 90 deg rotation, 0 would aim the input at the robot's -x side, 93 mm from the deck grommet, and the output at the Jetson. 180 puts the input 31 mm from the grommet where the dock-pad pair arrives and the output facing the battery, which is where both runs actually go."
   },
   "frame": {
-    "_note": "Low-profile carrier frame. A hub ring around the Clean button with three lap tabs; each of the three carriers is its own arm - it laps into the hub, then drops to a plate that lies FLAT ON THE ROOMBA'S DECK and bolts to two chassis screw bosses. There is no separate arm part any more, and nothing is stacked on top of an arm, which is where the old design lost its height. Everything aft of y = -38 is deliberately empty so the dust bin still comes out.",
-    "_carrier_frame": "Each carrier is drawn in its own local frame: origin at the ROBOT centre on the deck plane (z = 0 at 82.94), +X outboard along that carrier's axis, +Z up. The assembly rotates it by layout.carrier_angles. So r0/r1 are radii from the robot's centre, directly comparable to the screw-boss table, and boss_tabs are [boss_x, boss_y, anchor_x, anchor_y] in the SAME local frame - the tab is hulled from the plate edge at the anchor out to the boss.",
+    "_note": "Low-profile carrier frame on Kieran's hub.  The hub (deck_measured.hub, HIS part) is a 3.26 mm plate standing on the deck around the Clean button, with three pads at 0/90/180 deg; it is the ONLY thing fastened to the robot.  Each carrier is its own arm: a tongue lies on a hub pad and bolts through the pad's two holes, then a 45 deg ramp drops it 3.26 mm to a plate lying FLAT ON THE DECK.  Carriers touch the robot nowhere else - no chassis-boss ears.  Every carrier is intersected with the legal envelope of deck_measured.limits (less frame.envelope_margin) in roomba_nx.scad, so nothing can creep past the ring or the bumper line by accident.  Everything aft of y = -60 is still empty so the dust bin comes out.",
+    "_carrier_frame": "Each carrier is drawn in its own local frame: origin at the ROBOT centre on the deck plane (z = 0 at 82.94), +X outboard along that carrier's axis, +Z up.  The assembly rotates it by layout.carrier_angles.  So r0/r1 are radii from the robot's centre, directly comparable to deck_measured.flat_r and the limits.",
     "hub": {
-      "od": 76,
-      "id": 60,
-      "t": 6,
-      "pad_w": 24,
-      "pad_r1": 53,
-      "hole_r": [
-        40,
-        49
-      ],
-      "nut_af": 5.5,
-      "nut_h": 2.4,
-      "_note": "A plain 6 mm ring with three radial pads at 0/90/180 deg. ID 60 keeps the inner edge at r 30, clear of both the 40 mm Clean button and the button well, which the raycast puts inside r 25. Each carrier tongue lies ON TOP of a pad and is bolted down with two M3; the nuts sit in hex pockets in the pad's UNDERSIDE, trapped between the hub and the Roomba's shell, so no printed thread carries the joint. The pads stop at r 53 so the Jetson's inboard connector shells, which overhang its PCB and reach r 55.9, clear the hub instead of grazing it."
+      "_note": "Superseded 2026-09-22 by deck_measured.hub, Kieran's own part, which roomba_nx.scad reproduces exactly. The old 76 OD / 6 mm ring with nut pockets is gone: a 3.26 mm plate standing on the deck has no room for a nut under it. The M3 nut dimensions the camera clamp still uses moved to print.m3_nut_af/h."
     },
     "carrier": {
       "plate_t": 4,
       "tongue_w": 24,
       "tongue_r0": 32,
-      "tongue_r1": 52,
       "tongue_t": 4,
-      "ramp_r1": 62,
-      "boss_tab_w": 16,
       "corner_r": 6,
-      "_note": "The tongue is a 4 mm strap lying on the hub pad (so its top is at deck + 10), then a 45 deg ramp from tongue_r1 to ramp_r1 drops to the 4 mm plate lying FLAT ON THE DECK (top at deck + 4). That 6 mm step is the whole trick: nothing rides on top of an arm."
+      "_note": "The tongue is a 4 mm strap lying on the hub pad from tongue_r0 out to the pad's own end (deck_measured.hub side_pad_r1 52.86 / front_pad_r1 53.34), so its top is at deck + 7.26.  A 45 deg ramp then drops it the hub's 3.26 mm to the 4 mm plate lying FLAT ON THE DECK (top at deck + 4), so each plate starts at pad_r1 + 3.26: r 56.12 on the sides, 56.60 in front.  Both tongue holes are M3 clearance with a 90 deg countersink (print.m3_csk_d) so the flat heads finish flush - that is what lets the Jetson's I/O overhang pass over the r 49 bolt.  tongue_w 24 matches the pads (23.94 / 23.88) to within 0.06."
     },
     "jetson": {
-      "r0": 62,
-      "r1": 148,
-      "half_w": 60,
-      "standoff_h": 6,
+      "r0": 56.1174,
+      "r1": 128,
+      "half_w": 52,
+      "standoff_h": 9,
       "vent": [
-        30,
+        24,
         58
       ],
-      "boss_tabs": [
-        [
-          76,
-          50.46,
-          76,
-          50.46
-        ],
-        [
-          113.5,
-          -78,
-          110,
-          -60
-        ]
+      "vent_x": [
+        -20,
+        16
       ],
-      "_note": "standoff_h 6. NVIDIA's own devkit CAD puts components 4.56 mm below the PCB, not the 3.08 mm the carrier board specification quotes, so 5 mm would have left 0.44 mm and 6 leaves 1.44. The board's 100 mm axis runs along robot Y with the I/O edge facing INBOARD, so the barrel jack, the USB stack and the 40-pin header all present to the open deck between the carriers instead of hanging over the rim. Bolts to the bosses at (76, 50.5) - straight through the plate, in the 10 mm strip outside the board, where the M3 cap head clears the 5 mm standoffs - and at (113.5, -78) on a short rear ear. 130 mm apart, which is what stops the plate pivoting on its tongue."
+      "_note": "r0 is the end of the side tongue's ramp.  The board centre (layout.jetson_center) is as far outboard as the limits allow: the PCB's front outboard corner lands 0.5 mm inside front_r_max, and the outer standoffs' base circles (r 129.0) stay inside on_deck_r_max.  That pulls the I/O edge's overhang (NVIDIA's CAD has parts 4.55 mm under the PCB for 8.6 mm inboard of the board edge) in to r 47.4, straight over the tongue and its r 49 bolt - so standoff_h went from 6 to 9, putting those parts at deck + 8.45 against a flush tongue top of deck + 7.26.  The board's 100 mm axis still runs along robot Y with the I/O edge INBOARD.  vent_x: the two airflow cut-outs, relative to the board centre.  No boss ears: the plate hangs off the hub's two bolts and rests flat on the deck."
     },
     "battery": {
-      "r0": 62,
+      "r0": 56.1174,
       "wall": 3,
       "floor": 2.5,
-      "wall_h": 34,
+      "wall_h": 42.329,
+      "outer": [
+        40.646,
+        153.32
+      ],
+      "pocket_r": 1,
       "lid_t": 2.5,
       "lid_skirt": 6,
+      "lid_lip": 2.5,
+      "lid_w": 58,
       "strap_slot": [
         22,
         3
       ],
-      "boss_tabs": [
-        [
-          109,
-          -88,
-          109,
-          -68
-        ],
-        [
-          51.82,
-          66,
-          68,
-          66
-        ]
-      ],
-      "bms_center_y": -30,
-      "ina_center_y": 30,
-      "_note": "Cut for ovonic_3s_8000.design_*, the hard-case envelope, so either pack drops in. The lid lies on the pack, is located by end skirts and clamped by the two straps, and carries the BMS and the INA219 - which puts both boards, the T-plug and all four balance leads within about 40 mm of the cells they protect. wall_h 34 is the full pack height, so the lid bears on the WALLS and not on the cells; it caps over the outside of the cradle and the two straps clamp the stack.",
-      "outer": [
-        52,
-        149
-      ],
-      "lid_lip": 2.5
+      "strap_y": 55,
+      "bms_center_y": -15,
+      "ina_center_y": 29,
+      "_note": "The pocket is cut to EXACTLY ovonic_3s_8000.design_l/w/h (147.32 x 34.65 x 42.33), Kieran's padded pack, with no added clearance - the padding is the fit.  The pack stands on its 147 x 42 side: 34.65 across the cradle, 42.33 tall.  outer = pocket + 2 walls, stored because placement.py and the viewer read it; roomba_nx.scad asserts it.  r0 is the end of the side tongue's ramp, which puts the cradle's outer corners at r 124.2, all on the flat.  wall_h = pack height so the lid bears on the walls and not the cells.  pocket_r 1 is the pocket's corner radius: the padding's corners take it.  The lid is 58 wide - wider than the 46.5 skirt - because the 45 mm BMS and its two ties need it; the lid's overhang also carries the strap slots, just outside the skirt.  Along the lid: straps at +/- strap_y (the lugs on the walls match), the BMS (56 long) between them toward the lead end at -15, the INA219 beside it at +29.  Local -y is the robot's FRONT (the left carrier is rotated 180), which is where the lead notch is."
     },
     "front": {
-      "r0": 62,
-      "r1": 144,
+      "r0": 56.6,
       "half_w": 58,
-      "boss_tabs": [
-        [
-          127,
-          -30,
-          127,
-          -30
-        ],
-        [
-          127,
-          30,
-          127,
-          30
-        ]
-      ],
-      "drok_center_y": 86,
-      "_note": "r1 144 stops 3 mm short of the front_ir_boss at y 147 and nothing on this plate stands in front of it. The DROK sits at the inboard end, 20 mm from the deck grommet the dock-pad leads come up through."
+      "drok_center_y": 78,
+      "_note": "r0 is the end of the front tongue's ramp; the plate runs out to the cheeks' front end and is clipped to the envelope.  The DROK moved in from 86 to 78 so the rocker's rear-lower corner, swinging back and down at -25 deg, clears its 25 mm top.  front_ir_boss (y 147-165 on the Create CAD) is now beyond the ring's outer edge at r 144.4, i.e. on the bumper; the front limit keeps everything well behind it."
     },
     "camera": {
-      "pivot_y": 130,
-      "pivot_z": 27.06,
+      "pivot_y": 119.5,
+      "pivot_z": 34.06,
       "cheek_t": 4,
       "cheek_x": 54,
       "cheek_y": [
-        108,
-        144
+        97.5,
+        127.5
       ],
-      "cheek_top": 33.06,
+      "cheek_top": 40.06,
       "rocker": [
         88,
         24,
@@ -577,7 +531,8 @@
       ],
       "ear_t": 8,
       "ear_x": 45.5,
-      "ear_top": 32.06,
+      "ear_top": 39.06,
+      "ear_nose_r": 11,
       "lock_offset": [
         -9,
         -13.5
@@ -586,7 +541,7 @@
       "tilt_min": -25,
       "tilt_max": 15,
       "tripod_clearance_d": 6.8,
-      "_note": "A friction-clamp rocker, not a mast. The pivot runs THROUGH the D435i's optical centre, so tilting does not move the camera - and the 25 mm body is the only thing above the pivot, which is why the whole bracket is 33 mm tall instead of 89. lock_offset is the clamp bolt's position in the rocker's frame relative to the pivot; sweeping it over tilt_min..tilt_max is what cuts the arc slot in the cheeks. The pivot is TWO M3 stubs, one per side, not one rod: the bracket is 116 mm across and the M3 kit stops at 30 mm. Clearance holes in the cheeks, 2.5 mm pilots in the ears. lock_offset sits 1.3 mm inside the ear on both axes: further out and the clamp bore breaks the ear's edge, further in and the arc gets too short to clamp on."
+      "_note": "A friction-clamp rocker, not a mast. The pivot runs THROUGH the D435i's optical centre, so tilting does not move the camera - and the 25 mm body is the only thing above the pivot, which is why the whole bracket is 40 mm tall instead of 89. lock_offset is the clamp bolt's position in the rocker's frame relative to the pivot; sweeping it over tilt_min..tilt_max is what cuts the arc slot in the cheeks. The pivot is TWO M3 stubs, one per side, not one rod: the bracket is 116 mm across and the M3 kit stops at 30 mm. Clearance holes in the cheeks, 2.5 mm pilots in the ears. lock_offset sits 1.3 mm inside the ear on both axes: further out and the clamp bore breaks the ear's edge, further in and the arc gets too short to clamp on.  ear_nose_r: forward of the pivot each ear is a disc of this radius about the pivot, not a rectangle, so its front does not swing forward as the rocker tilts - the square corner it replaced reached 15.9 mm ahead of the pivot at +15 deg, at robot x 53.5, which is where the front limit bites hardest."
     },
     "_camera_height_rationale": "110 mm is the lowest the camera can sit without the robot occluding its own near field, and it is derived, not chosen. The only obstruction ahead of it is the front_ir_boss at (0, 165, 90.94). From an optical centre at (0, 142.5, 110) the grazing ray over that boss leaves at 39.7 deg below horizontal and meets the floor 132 mm ahead - a SLANT range of 172 mm, inside the D435i's own 175-195 mm Min-Z at 640x480 / 848x480, so the boss costs no usable depth at all. Off the centreline the horizon is the 83 mm body edge, grazing at 49.6 deg for a 144 mm slant, also inside Min-Z. At 105 mm the centre ray breaks even with Min-Z; at 100 mm a wedge of near floor about 27 deg wide goes blind behind the boss. Raising it further buys nothing: closer than Min-Z the camera is blind for its own reasons, and the Jetson's 126.6 mm sets the build height regardless.",
     "dock_block": [
@@ -606,7 +561,9 @@
     "ziptie_slot": [
       4.5,
       2.2
-    ]
+    ],
+    "envelope_margin": 0.5,
+    "_envelope": "Every carrier plate is clipped to the legal envelope shrunk by this much: r <= on_deck_r_max - margin up to z = over_ring_underside_min + margin (4.30, so the chamfer starts just above the 4 mm plate top), then a 45 deg chamfer out to front_r_max / rear_r_max - margin.  The chamfer is what keeps the clipped parts printable without support."
   },
   "_vendor_cad": {
     "_note": "Where the bought-part geometry comes from. Files in hardware/vendor-cad/.",

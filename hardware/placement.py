@@ -49,6 +49,10 @@ def ry(a):
     return trimesh.transformations.rotation_matrix(math.radians(a), [0, 1, 0])
 
 
+def rx(a):
+    return trimesh.transformations.rotation_matrix(math.radians(a), [1, 0, 0])
+
+
 def load(sub, name, *M):
     m = trimesh.load(os.path.join(HERE, sub, name + ".stl"))
     T = np.eye(4)
@@ -84,7 +88,12 @@ BOUGHT = {
                 [rz(AJ), tr(L["jetson_center"][0], 0, PZ + F["jetson"]["standoff_h"]), rz(L["jetson_rotation"])]),
     "cooler":  ("mesh", "jetson_devkit_cooler",
                 [rz(AJ), tr(L["jetson_center"][0], 0, PZ + F["jetson"]["standoff_h"]), rz(L["jetson_rotation"])]),
-    "pack":    ("mesh", "lipo_3s", [rz(AB), tr(CRAD_X, 0, DECK + F["battery"]["floor"]), rz(90)]),
+    # The mesh is Ovonic's 135 x 42 x 34 brick lying flat.  Kieran's pack stands on its side - 42 tall,
+    # 34 across the cradle - so it is turned about its long axis: centred on its 34, rolled 90 deg,
+    # then stood on the pocket floor.  (ports.lipo is still in the flat mesh's own frame.)
+    "pack":    ("mesh", "lipo_3s", [rz(AB), tr(CRAD_X, 0, DECK + F["battery"]["floor"]), rz(90),
+                                    tr(0, 0, D["ovonic_3s_8000"]["w"] / 2), rx(90),
+                                    tr(0, 0, -D["ovonic_3s_8000"]["h"] / 2)]),
     "drok":    ("mesh", "drok", [rz(AC), tr(F["front"]["drok_center_y"], 0, PZ), rz(L["drok_rotation"])]),
     "bms":     ("mesh", "bms", [rz(AB), tr(CRAD_X, F["battery"]["bms_center_y"], LID_TOP)]),
     "ina219":  ("mesh", "ina219", [rz(AB), tr(CRAD_X, F["battery"]["ina_center_y"], LID_TOP)]),
