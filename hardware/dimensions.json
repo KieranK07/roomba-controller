@@ -124,7 +124,7 @@
       "_source": "Kieran's hub, as modelled in roomba_top_deck.step: the ring widened from 76 to 86.36 OD so the Roomba mounting holes fit. It is HIS part - reproduce it, do not redesign it.",
       "od": 86.36,
       "id": 59.944,
-      "top_h": 3.26,
+      "top_h": 3.2639,
       "_top_h": "Top face 0.1285 in above C - sheet point B was measured on it. The STEP draws the hub as a 3.26 mm plate standing on the flat; whether the printed part is really that thin or sits lower in the bay is NOT confirmed.",
       "side_pad_w": 23.9394,
       "side_pad_r1": 52.8574,
@@ -471,7 +471,7 @@
       "_note": "The tongue is a 4 mm strap lying on the hub pad from tongue_r0 out to the pad's own end (deck_measured.hub side_pad_r1 52.86 / front_pad_r1 53.34), so its top is at deck + 7.26.  A 45 deg ramp then drops it the hub's 3.26 mm to the 4 mm plate lying FLAT ON THE DECK (top at deck + 4), so each plate starts at pad_r1 + 3.26: r 56.12 on the sides, 56.60 in front.  Both tongue holes are M3 clearance with a 90 deg countersink (print.m3_csk_d) so the flat heads finish flush - that is what lets the Jetson's I/O overhang pass over the r 49 bolt.  tongue_w 24 matches the pads (23.94 / 23.88) to within 0.06."
     },
     "jetson": {
-      "r0": 56.1174,
+      "r0": 56.1213,
       "r1": 128,
       "half_w": 52,
       "standoff_h": 9,
@@ -486,7 +486,7 @@
       "_note": "r0 is the end of the side tongue's ramp.  The board centre (layout.jetson_center) is as far outboard as the limits allow: the PCB's front outboard corner lands 0.5 mm inside front_r_max, and the outer standoffs' base circles (r 129.0) stay inside on_deck_r_max.  That pulls the I/O edge's overhang (NVIDIA's CAD has parts 4.55 mm under the PCB for 8.6 mm inboard of the board edge) in to r 47.4, straight over the tongue and its r 49 bolt - so standoff_h went from 6 to 9, putting those parts at deck + 8.45 against a flush tongue top of deck + 7.26.  The board's 100 mm axis still runs along robot Y with the I/O edge INBOARD.  vent_x: the two airflow cut-outs, relative to the board centre.  No boss ears: the plate hangs off the hub's two bolts and rests flat on the deck."
     },
     "battery": {
-      "r0": 56.1174,
+      "r0": 56.1213,
       "wall": 3,
       "floor": 2.5,
       "wall_h": 42.329,
@@ -509,7 +509,7 @@
       "_note": "The pocket is cut to EXACTLY ovonic_3s_8000.design_l/w/h (147.32 x 34.65 x 42.33), Kieran's padded pack, with no added clearance - the padding is the fit.  The pack stands on its 147 x 42 side: 34.65 across the cradle, 42.33 tall.  outer = pocket + 2 walls, stored because placement.py and the viewer read it; roomba_nx.scad asserts it.  r0 is the end of the side tongue's ramp, which puts the cradle's outer corners at r 124.9, all on the flat.  wall_h = pack height so the lid bears on the walls and not the cells.  pocket_r 1 is the pocket's corner radius: the padding's corners take it.  The lid is 58 wide - wider than the 46.5 skirt - because the 45 mm BMS and its two ties need it; the lid's overhang also carries the strap slots, just outside the skirt.  Along the lid: straps at +/- strap_y (the lugs on the walls match), the BMS (56 long) between them toward the lead end at -15, the INA219 beside it at +29.  Local -y is the robot's FRONT (the left carrier is rotated 180), which is where the lead notch is."
     },
     "front": {
-      "r0": 56.6,
+      "r0": 56.6039,
       "half_w": 58,
       "half_w_inboard": 40,
       "drok_center_y": 78,

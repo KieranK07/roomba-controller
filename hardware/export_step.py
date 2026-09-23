@@ -60,11 +60,19 @@ OPENSCAD = os.environ.get("OPENSCAD") or next(
 PARTS = ["hub", "jetson_plate", "front_plate", "camera_rocker",
          "battery_cradle", "battery_lid", "pad_carrier", "dock_pin_block"]
 
-# Volume in mm^3 of the matching hardware/stl/*.stl, as a regression tripwire.  These are the
-# faceted volumes, so an exact solid is expected to land a few thousandths of a percent off.
-STL_VOLUME = {"hub": 16436, "jetson_plate": 32227, "front_plate": 49468, "camera_rocker": 15908,
-              "battery_cradle": 66471, "battery_lid": 26883, "pad_carrier": 9688,
-              "dock_pin_block": 16612}
+def stl_volume(part):
+    """Volume in mm^3 of hardware/stl/<part>.stl - the regression tripwire every STEP is held to.
+
+    Read from the file rather than kept as a table: a hard-coded table silently goes stale on the
+    next geometry change and then fails every part for the wrong reason (it did, on the
+    measured-deck rework).  The STL is what gets printed, so it is the right thing to agree with.
+    It is faceted, so an exact solid is expected to land a few thousandths of a percent off.
+    """
+    import Mesh
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stl", part + ".stl")
+    if not os.path.exists(path):
+        fail("%s: no %s - export the STL first (see the header of roomba_nx.scad)" % (part, path))
+    return Mesh.Mesh(path).Volume
 
 # Surface types a part is allowed to reach STEP as.  The point of the whole exercise is that
 # nothing here is a BSplineSurface: a spline fitted through a circle is not a circle, and a CAD
@@ -296,8 +304,8 @@ def audit(part, shape):
             azimuths.add(round(math.degrees(math.atan2(f.Surface.Axis.y, f.Surface.Axis.x)) % 360, 2))
     a = sorted(azimuths)
     gaps = [g for g in ((a[(i + 1) % len(a)] - a[i]) % 360 for i in range(len(a))) if g > 1e-3]
-    bb = shape.BoundBox
-    ref = STL_VOLUME[part]
+    bb = shape.optimalBoundingBox()      # BoundBox pads curved faces by their tolerance
+    ref = stl_volume(part)
     delta = (shape.Volume - ref) / ref * 100
     stray = sorted(k for k in kinds if k not in ANALYTIC)
     good = shape.isValid() and shape.isClosed() and abs(delta) < 0.05 and not stray
