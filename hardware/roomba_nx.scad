@@ -286,7 +286,9 @@ module front_plate() {
   clip_to_envelope(layout_carrier_angles[1]) difference() {
     union() {
       carrier_tongue(PAD_FRONT);
-      translate([r0, -hw, 0]) rounded_box([r1 - r0, 2*hw, PT], 10);
+      // narrow inboard, where the battery cradle's front end is; full width from the gussets out
+      translate([r0, -frame_front_half_w_inboard, 0]) rounded_box([r1 - r0, 2*frame_front_half_w_inboard, PT], 10);
+      translate([cy[0] - 22, -hw, 0]) rounded_box([r1 - cy[0] + 22, 2*hw, PT], 10);
       for (s = [-1, 1]) translate([cy[0], 0, 0])                          // the two cheeks
         wall_at(s, cx, ct, cy[1] - cy[0], frame_camera_cheek_top);
       // Gusset behind each cheek.  Was hull() of two E-wide slivers of wall_at at the same |y|;

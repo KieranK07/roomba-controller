@@ -72,7 +72,7 @@
         -78
       ]
     ],
-    "screw_bosses_note": "OI spec p.6 'Internal Screw Boss Locations', read at 2.4x zoom. Under the faceplate; take #4-40 or M3 standoffs. +Y forward.",
+    "screw_bosses_note": "OI spec p.6 'Internal Screw Boss Locations', read at 2.4x zoom. Under the faceplate. HISTORICAL: the frame no longer touches any of these - since 2026-09-22 the hub (deck_measured.hub) is the only attachment to the robot, and verify.py checks that no part has a screw hole over one.",
     "mass_g": 3500,
     "bumper_diameter": 348.5,
     "height_rear": 82.94,
@@ -256,7 +256,7 @@
     "design_l": 147.32,
     "design_w": 34.646,
     "design_h": 42.329,
-    "_design_note": "The CRADLE IS CUT FOR design_l/w/h, not l/w/h. l/w/h are Ovonic's soft-pack figures (135 x 42 x 34, ASIN B07CVDLM5R, now dead); design_* is the hard-case variant B0FZJXBRHT (141.95 x 45.25 x 34, 449 g) that is the only one you can still buy. Cutting for the larger envelope means either pack drops in - the soft pack simply sits with up to 7 mm of end play, taken up by the straps and a foam shim. Cutting for the smaller one would have meant a reprint if the pack on the bench turns out to be the hard case.",
+    "_design_note": "The CRADLE IS CUT FOR design_l/w/h, not l/w/h. Since 2026-09-22 design_* is Kieran's measured, padded pack (see _design_note_2026_09_22) and the pocket is exactly that size, so only that pack fits. l/w/h remain Ovonic's soft-pack spec (135 x 42 x 34, ASIN B07CVDLM5R, dead) and are what hardware/mesh/lipo_3s.stl models; placement.py stands that mesh on its side inside the pocket. The earlier design_* (141.95 x 45.25 x 34, the hard-case B0FZJXBRHT) is superseded.",
     "_design_note_2026_09_22": "design_l/w/h are now Kieran's measured envelope of the pack he OWNS, padding included (5.8 x 1.364 x 1.6665 in). Stands 42.3 TALL (w 34.6 across the cradle). Cut the pocket to exactly this - the padding is already in it."
   },
   "drok_buck": {
@@ -437,7 +437,7 @@
     "battery_rotation": 90,
     "camera_pivot": [
       0,
-      119.5
+      121.5
     ],
     "camera_tilt_deg": -8,
     "drok_center": [
@@ -447,14 +447,14 @@
     "pads_center_y": 100,
     "pads_z": 0,
     "chassis_clearance": 8,
-    "_balance": "MEASURED by hardware/verify.py, which weighs the placed geometry rather than guessing: the payload is 988 g with its centre of mass at (-8.6, +19.1, 100.7), so the loaded robot's centre sits 1.9 mm left of the wheel centreline and 4.2 mm forward of it. The left group (cradle, pack, lid, BMS, INA219) is 491 g at x -88 and the right group (plate, Jetson) 318 g at x +109; they very nearly cancel. The previous four-arm layout put a 424 g pack on one arm against a 74 g electronics row on the other, which is the systematic wheel-load difference the odometry was reading as a heading bias. Tip threshold is unchanged at about 64 degrees.",
+    "_balance": "MEASURED by hardware/verify.py, which weighs the placed geometry rather than guessing: after the 2026-09-22 rework the payload is 977 g with its centre of mass at (-6.7, +17.2, 104.5), so the loaded robot's centre sits 1.5 mm left of the wheel centreline and 3.7 mm forward of it.  Both side groups moved inboard to meet the measured limits (pack centre x -76.4 from -88, Jetson x +95.5 from +104) and they still very nearly cancel.  Tip threshold about 64 degrees.  Pack mass is still Ovonic's 424 g - Kieran's padding is not weighed.",
     "drok_rotation": 180,
     "carrier_angles": [
       0,
       90,
       180
     ],
-    "_drok_note": "180, not 0. ref_drok() puts the input terminals at its local +y and the outputs at -y; through the front carrier's 90 deg rotation, 0 would aim the input at the robot's -x side, 93 mm from the deck grommet, and the output at the Jetson. 180 puts the input 31 mm from the grommet where the dock-pad pair arrives and the output facing the battery, which is where both runs actually go."
+    "_drok_note": "180, not 0. ref_drok() puts the input terminals at its local +y and the outputs at -y; through the front carrier's 90 deg rotation, 0 would aim the input at the robot's -x side, 93 mm from the deck grommet, and the output at the Jetson. 180 puts the input about 24 mm from the grommet (31 before the DROK moved in to y 78) where the dock-pad pair arrives and the output facing the battery, which is where both runs actually go."
   },
   "frame": {
     "_note": "Low-profile carrier frame on Kieran's hub.  The hub (deck_measured.hub, HIS part) is a 3.26 mm plate standing on the deck around the Clean button, with three pads at 0/90/180 deg; it is the ONLY thing fastened to the robot.  Each carrier is its own arm: a tongue lies on a hub pad and bolts through the pad's two holes, then a 45 deg ramp drops it 3.26 mm to a plate lying FLAT ON THE DECK.  Carriers touch the robot nowhere else - no chassis-boss ears.  Every carrier is intersected with the legal envelope of deck_measured.limits (less frame.envelope_margin) in roomba_nx.scad, so nothing can creep past the ring or the bumper line by accident.  Everything aft of y = -60 is still empty so the dust bin comes out.",
@@ -506,22 +506,23 @@
       "strap_y": 55,
       "bms_center_y": -15,
       "ina_center_y": 29,
-      "_note": "The pocket is cut to EXACTLY ovonic_3s_8000.design_l/w/h (147.32 x 34.65 x 42.33), Kieran's padded pack, with no added clearance - the padding is the fit.  The pack stands on its 147 x 42 side: 34.65 across the cradle, 42.33 tall.  outer = pocket + 2 walls, stored because placement.py and the viewer read it; roomba_nx.scad asserts it.  r0 is the end of the side tongue's ramp, which puts the cradle's outer corners at r 124.2, all on the flat.  wall_h = pack height so the lid bears on the walls and not the cells.  pocket_r 1 is the pocket's corner radius: the padding's corners take it.  The lid is 58 wide - wider than the 46.5 skirt - because the 45 mm BMS and its two ties need it; the lid's overhang also carries the strap slots, just outside the skirt.  Along the lid: straps at +/- strap_y (the lugs on the walls match), the BMS (56 long) between them toward the lead end at -15, the INA219 beside it at +29.  Local -y is the robot's FRONT (the left carrier is rotated 180), which is where the lead notch is."
+      "_note": "The pocket is cut to EXACTLY ovonic_3s_8000.design_l/w/h (147.32 x 34.65 x 42.33), Kieran's padded pack, with no added clearance - the padding is the fit.  The pack stands on its 147 x 42 side: 34.65 across the cradle, 42.33 tall.  outer = pocket + 2 walls, stored because placement.py and the viewer read it; roomba_nx.scad asserts it.  r0 is the end of the side tongue's ramp, which puts the cradle's outer corners at r 124.9, all on the flat.  wall_h = pack height so the lid bears on the walls and not the cells.  pocket_r 1 is the pocket's corner radius: the padding's corners take it.  The lid is 58 wide - wider than the 46.5 skirt - because the 45 mm BMS and its two ties need it; the lid's overhang also carries the strap slots, just outside the skirt.  Along the lid: straps at +/- strap_y (the lugs on the walls match), the BMS (56 long) between them toward the lead end at -15, the INA219 beside it at +29.  Local -y is the robot's FRONT (the left carrier is rotated 180), which is where the lead notch is."
     },
     "front": {
       "r0": 56.6,
       "half_w": 58,
+      "half_w_inboard": 40,
       "drok_center_y": 78,
-      "_note": "r0 is the end of the front tongue's ramp; the plate runs out to the cheeks' front end and is clipped to the envelope.  The DROK moved in from 86 to 78 so the rocker's rear-lower corner, swinging back and down at -25 deg, clears its 25 mm top.  front_ir_boss (y 147-165 on the Create CAD) is now beyond the ring's outer edge at r 144.4, i.e. on the bumper; the front limit keeps everything well behind it."
+      "_note": "r0 is the end of the front tongue's ramp; the plate runs out to the cheeks' front end and is clipped to the envelope.  It is half_w_inboard (40) either side from r0 to where the cheek gussets start (cheek_y[0] - 22), and the full 58 only outboard of that: the battery cradle's front end now reaches y 76.7 at x -56 to -97, where a full-width plate would overlap it.  40 still carries the DROK (+/-32.8) and its tie slots (+/-37).  The DROK moved in from 86 to 78 so the rocker's rear-lower corner, swinging back and down at -25 deg, clears its 25 mm top.  front_ir_boss (y 147-165 on the Create CAD) is now beyond the ring's outer edge at r 144.4, i.e. on the bumper; the front limit keeps everything well behind it."
     },
     "camera": {
-      "pivot_y": 119.5,
+      "pivot_y": 121.5,
       "pivot_z": 34.06,
       "cheek_t": 4,
       "cheek_x": 54,
       "cheek_y": [
-        97.5,
-        127.5
+        99.5,
+        129.5
       ],
       "cheek_top": 40.06,
       "rocker": [
@@ -543,7 +544,7 @@
       "tripod_clearance_d": 6.8,
       "_note": "A friction-clamp rocker, not a mast. The pivot runs THROUGH the D435i's optical centre, so tilting does not move the camera - and the 25 mm body is the only thing above the pivot, which is why the whole bracket is 40 mm tall instead of 89. lock_offset is the clamp bolt's position in the rocker's frame relative to the pivot; sweeping it over tilt_min..tilt_max is what cuts the arc slot in the cheeks. The pivot is TWO M3 stubs, one per side, not one rod: the bracket is 116 mm across and the M3 kit stops at 30 mm. Clearance holes in the cheeks, 2.5 mm pilots in the ears. lock_offset sits 1.3 mm inside the ear on both axes: further out and the clamp bore breaks the ear's edge, further in and the arc gets too short to clamp on.  ear_nose_r: forward of the pivot each ear is a disc of this radius about the pivot, not a rectangle, so its front does not swing forward as the rocker tilts - the square corner it replaced reached 15.9 mm ahead of the pivot at +15 deg, at robot x 53.5, which is where the front limit bites hardest."
     },
-    "_camera_height_rationale": "110 mm is the lowest the camera can sit without the robot occluding its own near field, and it is derived, not chosen. The only obstruction ahead of it is the front_ir_boss at (0, 165, 90.94). From an optical centre at (0, 142.5, 110) the grazing ray over that boss leaves at 39.7 deg below horizontal and meets the floor 132 mm ahead - a SLANT range of 172 mm, inside the D435i's own 175-195 mm Min-Z at 640x480 / 848x480, so the boss costs no usable depth at all. Off the centreline the horizon is the 83 mm body edge, grazing at 49.6 deg for a 144 mm slant, also inside Min-Z. At 105 mm the centre ray breaks even with Min-Z; at 100 mm a wedge of near floor about 27 deg wide goes blind behind the boss. Raising it further buys nothing: closer than Min-Z the camera is blind for its own reasons, and the Jetson's 126.6 mm sets the build height regardless.",
+    "_camera_height_rationale": "117 mm (pivot_z 34.06) at pivot_y 121.5, re-derived 2026-09-22 for the measured deck; the old 110 mm figure no longer holds.  pivot_y is fixed first: it is as far forward as the front limit allows - the rocker's ear reaches r 143.5 at +15 deg and the camera r 141.5 at -25 deg, against front_r_max 144.42.  That is 8.5 mm further back than the old 130, so the robot's own front edge now sits 43 mm ahead of the lens instead of 35.  Method (scratch raycast, not in the repo): the Create CAD shell (deck 83, bumper top ~83 out to r ~165, front_ir_boss 90.94 at y 147-165) plus the MEASURED 3.3 mm ring, rays over the D435i's 87 x 58 deg depth FOV at the -8 deg design tilt, whose lower edge is 37 deg below horizontal.  Result, as the band of floor slant range the robot hides inside the FOV: 110 mm -> 183-268 (the IR boss dead ahead is the worst), 117 -> 194-227, 121 -> 201-218, 128 -> nothing.  For reference the OLD layout (130, 110) already hid 183-225 - the old note's 172 mm graze was computed from y 142.5, not the 130 the pivot actually sat at.  117 is the lowest height that is no worse than the old layout (far edge 227 vs 225) and keeps the near edge at the 195 mm Min-Z of 848x480.  It costs no build height: the camera top is 129.5 and the battery stack (BMS/INA219 on the lid over the 42.3 mm pack) sets the build at 133.5.  121 would also be free (camera top 133.5) and halves the band; 128 clears it entirely but raises the build 4 mm.  Caveat: the bumper top and the IR boss come from the Create CAD, not the measured STEP, which stops at r 144.42.",
     "dock_block": [
       130,
       28,
@@ -698,7 +699,7 @@
         48,
         82.94
       ],
-      "_deck_grommet_note": "the ONLY hole through the Roomba's shell: the two dock-pad leads run up from the underside carrier through a drilled grommet here. It sits in the open wedge of deck between the hub (r 38), the front carrier (y >= 58) and the Jetson plate (x >= 58), so no printed part has to be lifted to reach it, and it is 20 mm from the DROK's input terminals. Nothing is known about what is under the shell at this point - look before drilling.",
+      "_deck_grommet_note": "the ONLY hole through the Roomba's shell: the two dock-pad leads run up from the underside carrier through a drilled grommet here. It sits in the open wedge of deck between the hub (r 43, pads on the axes only), the front carrier (x <= 40 inboard of y 99.5) and the Jetson plate (x >= 56.1), so no printed part has to be lifted to reach it, and it is about 24 mm from the DROK's input terminals. Nothing is known about what is under the shell at this point - look before drilling.",
       "fuse_mount": [
         -40,
         -58,
