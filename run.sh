@@ -3,6 +3,13 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# --sim needs no robot and no serial port.
+for arg in "$@"; do
+  if [[ "$arg" == "--sim" ]]; then
+    exec ./.venv/bin/python server.py "$@"
+  fi
+done
+
 PORT="${ROOMBA_PORT:-}"
 if [[ -z "$PORT" ]]; then
   PORT=$(ls /dev/cu.usbserial-* 2>/dev/null | head -1 || true)

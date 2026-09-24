@@ -472,6 +472,9 @@ def main():
                          "clean cycle cannot resume (default); 'passive' just "
                          "drops to Passive, which still charges but may resume "
                          "cleaning when undocked")
+    ap.add_argument("--sim", action="store_true",
+                    help="no robot: drive a simulated Roomba in a 4 x 3 m room. "
+                         "Never opens a serial port")
     ap.add_argument("--monitor", action="store_true",
                     help="read-only: stay in Passive so a docked robot keeps "
                          "charging; no actuator commands are sent")
@@ -484,10 +487,15 @@ def main():
     signal.signal(signal.SIGTERM, _term)
     signal.signal(signal.SIGHUP, _term)
 
-    bot = RoombaOI(args.port, args.baud, passive_only=args.monitor)
+    if args.sim:
+        from roomba_oi.sim import SimRoomba
+        bot = SimRoomba(passive_only=args.monitor)
+        print("[oi] SIMULATION: no serial port, the robot and its telemetry are fake")
+    else:
+        bot = RoombaOI(args.port, args.baud, passive_only=args.monitor)
+        print(f"[oi] opening {args.port} @ {args.baud}")
     if args.monitor:
         print("[oi] MONITOR MODE: staying in Passive, motors disabled")
-    print(f"[oi] opening {args.port} @ {args.baud}")
     bot.connect()
     try:
         asyncio.run(main_async(args, bot))

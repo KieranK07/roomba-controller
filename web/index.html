@@ -90,6 +90,7 @@
 
 <header>
   <h1>ROOMBA 690 · OPEN INTERFACE</h1>
+  <span class="pill warn" id="p-sim" hidden>simulated robot</span>
   <span class="pill" id="p-link">connecting…</span>
   <span class="pill" id="p-mode">mode —</span>
   <span class="pill" id="p-batt">battery —</span>
@@ -320,6 +321,7 @@ function arc(cx,cy,r0,r1,a0,a1){
 function paintTelemetry(m){
   lastTel = performance.now();
   const live = m.link !== false;        // absent on older servers -> assume live
+  $("p-sim").hidden = !m.sim;
   setPill("p-link", live ? "link up" : "robot not connected", live ? "ok" : "warn");
   document.body.classList.toggle("nolink", !live);
   setPill("p-mode", "mode " + (m.oi_mode_name || "—"),

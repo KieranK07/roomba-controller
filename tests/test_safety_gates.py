@@ -12,6 +12,7 @@ Plus the link gate added when the server was made to boot without the robot:
 opcodes must not be forwarded while nothing is answering on the serial line.
 
 No hardware needed: the robot is a stub that records what it was told.
+The last group checks the --sim robot, which must never open a serial port.
 Run with `arch -arm64 .venv/bin/python tests/test_safety_gates.py` (the venv's
 numpy is arm64-only and this Mac's shell defaults to Rosetta).
 """
@@ -251,11 +252,68 @@ def test_origin_gate() -> None:
           "http://192.168.1.50:9000" in named, f"got {named!r}")
 
 
+# ------------------------------------------------------------- --sim robot ---
+def test_sim() -> None:
+    """The --sim robot streams frames the real parser accepts and never opens a port."""
+    import time
+
+    import serial
+    from roomba_oi.sim import SimRoomba, encode_frame
+
+    print("\n--sim robot")
+
+    opened = []
+    real_serial = serial.Serial
+
+    def no_port(*a, **k):
+        opened.append(a)
+        raise AssertionError("sim opened a serial port")
+    serial.Serial = no_port
+    try:
+        frame = encode_frame({"oi_mode": 2, "encoder_left": -5, "voltage_mv": 15000})
+        values = P.parse_frame(frame)
+        check("encoded frame passes the real checksum", P.checksum_ok(frame))
+        check("and parses back", values["oi_mode"] == 2 and values["encoder_left"] == -5
+              and values["voltage_mv"] == 15000, f"got {values!r}")
+
+        bot = SimRoomba(seed=1)
+        bot.connect()
+        check("streams frames", bot.wait_awake(1.0))
+        check("comes up in Safe", bot.sensors()["oi_mode_name"] == "safe")
+
+        bot.drive(200, 200, force=True)
+        time.sleep(0.5)
+        s = bot.sensors()
+        check("driving forward moves it forward", 50 < s["distance_mm"] < 150,
+              f"distance {s['distance_mm']}")
+        bot.drive(-100, 100, force=True)
+        time.sleep(0.5)
+        check("spinning left turns the heading", 5 < bot.sensors()["heading_ccw_deg"] < 40,
+              f"heading {bot.sensors()['heading_ccw_deg']}")
+
+        bot.set_mode("passive")
+        d0 = bot.sensors()["distance_mm"]
+        bot.drive(300, 300, force=True)
+        time.sleep(0.3)
+        check("Passive ignores drive commands", bot.sensors()["distance_mm"] == d0)
+
+        bot.power_off()
+        time.sleep(0.1)
+        n = bot.frames_ok
+        time.sleep(0.3)
+        check("powered off, it stops streaming", bot.frames_ok == n)
+        bot.close()
+        check("no serial port was opened", not opened)
+    finally:
+        serial.Serial = real_serial
+
+
 if __name__ == "__main__":
     test_allowlist()
     test_estop_gate()
     test_link_gate()
     test_origin_gate()
+    test_sim()
     print()
     if FAILURES:
         print(f"FAILED: {len(FAILURES)} check(s): {', '.join(FAILURES)}")
