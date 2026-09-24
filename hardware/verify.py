@@ -18,10 +18,21 @@ import trimesh
 # anything sits.  CHECKED_* is verify's subset of that table; see placement.py for what it omits.
 from placement import (  # noqa: F401  - re-exported names are used further down
     HERE, D, R690, F, L, DECK, AJ, AC, AB, PT, PZ, CRAD_X, PIVX, PIVZ, PACK_TOP, LID_TOP,
-    rz, tr, ry, load, TILT, CAM, CHECKED_PRINTED, CHECKED_BOUGHT, placed)
+    rz, tr, ry, load, TILT, CAM, CHECKED_PRINTED, CHECKED_BOUGHT, placed, missing,
+    STL_HELP, MESH_HELP)
+
+# Both inputs are gitignored, so a fresh clone has neither.  Without the printed STLs there is
+# nothing to verify; without the vendor meshes the printed parts can still be checked, and the
+# checks that need a vendor body are skipped and named.
+if missing(CHECKED_PRINTED):
+    sys.exit(f"verify.py: no exported STLs for {', '.join(missing(CHECKED_PRINTED))}.\n{STL_HELP}")
+NO_MESH = missing(CHECKED_BOUGHT)
+if NO_MESH:
+    print(f"SKIPPING vendor parts with no mesh on disk: {', '.join(NO_MESH)}\n{MESH_HELP}\n"
+          "  Clearance, interference and balance below cover the printed parts only.\n")
 
 PRINTED = {k: placed(k) for k in CHECKED_PRINTED}
-BOUGHT = {k: placed(k) for k in CHECKED_BOUGHT}
+BOUGHT = {k: placed(k) for k in CHECKED_BOUGHT if k not in NO_MESH}
 ALL = {**PRINTED, **BOUGHT}
 fail = []
 
@@ -239,9 +250,10 @@ print("\ntilt sweep (rocker + camera vs the front plate at " + f"{PZ:.2f}):")
 worst = 1e9
 for t in TILTS:
     T = rz(AC) @ tr(PIVX, 0, PIVZ) @ ry(-t)
-    lo = min(load("stl", "camera_rocker", T,
-                  tr(0, 0, -(D["realsense_d435i"]["h"] / 2 + F["camera"]["rocker"][2]))).bounds[0][2],
-             load("mesh", "realsense_d435i", T, rz(-90)).bounds[0][2])
+    lo = load("stl", "camera_rocker", T,
+              tr(0, 0, -(D["realsense_d435i"]["h"] / 2 + F["camera"]["rocker"][2]))).bounds[0][2]
+    if "camera" in ALL:
+        lo = min(lo, load("mesh", "realsense_d435i", T, rz(-90)).bounds[0][2])
     if lo < worst:
         worst, worst_t = lo, t
 print(f"  lowest point {worst:.2f} mm at {worst_t:+d} deg -> {worst - PZ:+.2f} mm over the plate")
@@ -294,7 +306,9 @@ print(f"  loaded  {robot + tot:6.0f} g   CoM ({com[0]*tot/(robot+tot):+.1f}, "
 zc = (robot * 45 + tot * com[2]) / (robot + tot)
 print(f"  CoM height ~{zc:.0f} mm over a {R690['wheel_track']} mm track -> tips at "
       f"{math.degrees(math.atan(R690['wheel_track'] / 2 / zc)):.0f} deg")
-if abs(com[0]) > 25:
+if NO_MESH:
+    print("  (not checked: the 424 g pack and 300 g Jetson set the balance, and their meshes are missing)")
+elif abs(com[0]) > 25:
     fail.append(f"payload CoM is {com[0]:+.1f} mm off the centreline")
 
 # ---- print bed --------------------------------------------------------------------------
@@ -315,4 +329,4 @@ if fail:
     for f in fail:
         print("  -", f)
     sys.exit(1)
-print("PASS")
+print(f"PASS (printed parts only; skipped {', '.join(NO_MESH)})" if NO_MESH else "PASS")

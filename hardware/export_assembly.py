@@ -18,6 +18,7 @@ geometry in this repo at all.
     python3 hardware/export_assembly.py
 """
 import os
+import sys
 
 import numpy as np
 import trimesh
@@ -127,9 +128,21 @@ seen from the other side.  Do not read the overlap as a fit check.
 
 
 def main():
+    # stl/ and mesh/ are both gitignored.  Printed parts are required; vendor bodies are skipped
+    # and named, so a fresh clone still gets a usable export of what it can build.
+    gone = P.missing([name for name, _, _ in EXPORT])
+    printed = [n for n in gone if P.PLACED[n][0] == "stl"]
+    if printed:
+        sys.exit(f"export_assembly.py: no exported STLs for {', '.join(printed)}.\n{P.STL_HELP}")
+    if gone:
+        print(f"SKIPPING parts with no mesh on disk: {', '.join(gone)}\n{P.MESH_HELP}\n")
+
     os.makedirs(OUT, exist_ok=True)
     rows, scene = [], []
     for name, stem, what in EXPORT:
+        if name in gone:
+            rows.append(f"| `{stem}.stl` | - | - | - | - | - | - | - | {what} - SKIPPED, vendor mesh not on disk |")
+            continue
         m = P.placed(name)
         m.export(os.path.join(OUT, stem + ".stl"))
         b = m.bounds
@@ -154,7 +167,7 @@ def main():
                              ramp=ramp, pads=P.L["pads_center_y"], z0=P.Z0,
                              rise=py / P.D["home_base"]["ramp_d"] * P.D["home_base"]["ramp_h"]))
 
-    print(f"\n{len(EXPORT)} STLs + MANIFEST.md -> {OUT}")
+    print(f"\n{len(EXPORT) - len(gone)} STLs + MANIFEST.md -> {OUT}")
     print(f"overall  x {lo[0]:.1f}..{hi[0]:.1f}  y {lo[1]:.1f}..{hi[1]:.1f}  z {lo[2]:.2f}..{hi[2]:.2f}")
     assert lo[2] >= -1e-6, "something is below the floor plane"
 
