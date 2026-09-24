@@ -103,8 +103,9 @@ back. Use `--park passive` to leave it awake in Passive on exit instead.
 - Releasing keys, losing window focus, or disconnecting all halt the wheels.
 - **E-stop halts everything**, `Seek dock` and the brush toggle included. It used
   to gate only the drive path, so a latched e-stop still let those two through.
-- On exit the robot is parked back in Passive -- Safe/Full never sleep and stop
-  charging, which deep-discharges the battery on the dock.
+- On exit the robot never stays in Safe/Full, which never sleep and stop
+  charging, deep-discharging the battery on the dock. It is powered off by
+  default, or parked in Passive with `--park passive`.
 
 ### What can talk to the robot
 
@@ -187,8 +188,7 @@ rerun it after any geometry change.
   button, dust bin, mini-DIN), balance and print footprints. It exits non-zero
   on a failure; run it after every geometry change.
 - `build_viewer.py` injects the JSON and the STLs into a template and writes
-  `docs/assembly-3d.html`, an interactive Three.js view. The renders in
-  `hardware/preview/` are from before the measured-deck rebuild.
+  `docs/assembly-3d.html`, an interactive Three.js view.
 
 **`camera_rocker` is three separate pieces, not one.** The part exports as a
 strap (24.0 x 88.0 x 4.0) and two ears (8 wide, 21.5 tall, rounded ahead of the
