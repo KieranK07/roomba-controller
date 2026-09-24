@@ -15,11 +15,14 @@ hardware/export/
 hardware/cad-export/
 docs/assembly-3d.html
 
-# Third-party reference material, not mine to redistribute. Re-fetch from the
-# sources listed in docs/RESEARCH.md and scans/README.md. (docs/oi_spec.txt is
+# Third-party reference material, not redistributable. Re-fetch from the
+# sources named in hardware/dimensions.json (*_source keys). (docs/oi_spec.txt is
 # kept: iRobot publishes the Open Interface spec openly and RESEARCH.md cites it.)
 hardware/vendor-cad/
 hardware/mesh/
+
+# Local drop folder for scans and downloads
+scans/
 docs/*.pdf
 docs/drawings/
 docs/realsense_d400.txt

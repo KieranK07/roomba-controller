@@ -8,7 +8,7 @@ terminal; a keypress reaches the wheels in about 1.5-2 ms.
 
 ## Why
 
-I wanted to drive my Roomba by hand with no perceptible lag, as the base layer
+The goal is driving a Roomba by hand with no perceptible lag, as the base layer
 before bolting a Jetson and a depth camera on top and letting it drive itself.
 Two things were in the way. First, the 690 is the Wi-Fi model, and it was not
 obvious it even still exposed the wired Open Interface -- community reports on
@@ -51,6 +51,12 @@ python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt
 `run.sh` finds the first `/dev/cu.usbserial-*` (override with `ROOMBA_PORT=`).
 Then open <http://127.0.0.1:8666/>.
 
+No robot? `./run.sh --sim` drives a simulated 690 in a walled 4 x 3 m room
+(`roomba_oi/sim.py`). It never opens a serial port. It encodes real OI sensor
+frames, so the parser, odometry, safety gates and UI all run unchanged; bumpers
+and light bumpers fire at the walls. Cliffs, docking and cleaning are not
+simulated.
+
 **If nothing appears: press the CLEAN button on the Roomba.** It sleeps after
 5 minutes in Passive mode, and this cable can't wake it in software (RESEARCH.md
 §5.3). The server tells you and waits.
@@ -60,7 +66,8 @@ Connection diagnostic (read-only, never sends a motion command):
 `./.venv/bin/python probe.py`.
 
 Only `pyserial` and `websockets` are needed to drive the robot; the rest of
-`requirements.txt` is for the hardware model pipeline below.
+`requirements.txt` is for the hardware model pipeline below, which also needs
+[OpenSCAD](https://openscad.org) on the PATH.
 
 ## Controls
 
@@ -124,8 +131,8 @@ back. Use `--park passive` to leave it awake in Passive on exit instead.
 - Clients that send no `Origin` at all (curl, a script on the Jetson) are still
   allowed -- browsers always send one, so this doesn't reopen the hole above. It
   leaves exactly the unauthenticated-LAN exposure `--host 0.0.0.0` warns about.
-- `tests/test_safety_gates.py` covers all three gates against a stub robot, no
-  hardware needed: `python tests/test_safety_gates.py`.
+- `tests/test_safety_gates.py` covers all three gates against a stub robot, and
+  checks the `--sim` robot, no hardware needed: `python tests/test_safety_gates.py`.
 
 **Not yet implemented:** the 10.5 V low-voltage cutoff for the LiPo. The battery
 figure in the UI is the Roomba's own NiMH pack, not the LiPo feeding the Jetson.
@@ -150,11 +157,11 @@ and the Three.js viewer read it, so they can't disagree.
 The frame is a **hub** around the Clean button with **three carriers** on it:
 the Jetson plate on the right, the front plate (DROK buck plus the camera rocker)
 at the front, and the battery cradle on the left. The rear centre of the deck is
-left empty, so the dust bin still comes out. Placement comes from the **measured** top deck of my
-own 690 (`hardware/reference/roomba_top_deck.step`, `deck_measured` in the JSON),
+left empty, so the dust bin still comes out. Placement comes from the **measured** top deck of a
+real 690 (`hardware/reference/roomba_top_deck.step`, `deck_measured` in the JSON),
 not the Create 2 CAD, which is now display-only:
 
-- **The hub is the only attachment to the robot.** It is my own widened hub
+- **The hub is the only attachment to the robot.** It is a custom widened hub
   (OD 86.36, a 3.26 mm plate on the deck) with four Ø3.4 holes through it into the
   Roomba. Those four positions are an *estimate* until they are modelled from the
   robot. There are no chassis-boss ears any more.
@@ -164,7 +171,7 @@ not the Create 2 CAD, which is now display-only:
 - **Placement limits:** on the deck, inside r 134.26; past that a part's underside
   must clear the 3.3 mm raised ring; front half r <= 144.42 (the bumper moves),
   rear half r <= 150.5.
-- The pack is my own padded pack, 147.32 x 34.65 x 42.33, standing on its side;
+- The pack is a padded 3S pack, 147.32 x 34.65 x 42.33, standing on its side;
   the cradle pocket is cut exactly to it. Camera optical centre 117 mm, build
   height 133.5 mm (stock 92.25), payload 977 g.
 
@@ -200,21 +207,25 @@ ear is an unsupported 21.5 mm tower on an 8 mm-wide footprint, so give them a br
 Change a number in the JSON, rerun `gen.py`, re-export the affected STLs, run
 `verify.py`, then rerun `build_viewer.py`.
 
+`stl/` and `mesh/` are both gitignored, so a fresh clone has neither. `verify.py`
+and `export_assembly.py` stop with the OpenSCAD export commands if `stl/` is
+empty. If only the vendor meshes in `mesh/` are missing, they skip those parts,
+name them, and check the printed parts alone.
+
 ## Status
 
-Works end to end on my hardware: a Roomba 690 on `/dev/cu.usbserial-BG03LB59`
+Works end to end on one Roomba 690 on `/dev/cu.usbserial-BG03LB59`
 (FTDI FT232R), macOS. The driving/telemetry loop is complete and the latency and
 firmware findings in RESEARCH.md are all measured on this unit, not copied from
 the spec. The hardware model generates, verifies (`verify.py` PASS against the
 measured deck) and renders, but the physical mount has not been printed or fitted
 yet. Open before printing: the hub's four mount-hole positions are estimated, and
 how the carrier bolts hold in the hub is undecided. The dock parts (`pad_carrier`,
-`dock_pin_block`) stay blocked on a measurement of the Home Base ramp -- see
-`scans/README.md`.
+`dock_pin_block`) stay blocked on a measurement of the Home Base ramp.
 
 Generated STLs, third-party vendor CAD and datasheet PDFs are gitignored (they
-are large and not mine to redistribute); re-fetch them from the sources in
-`docs/RESEARCH.md` and `scans/README.md`, and regenerate the STLs with the
+are large and not redistributable); re-fetch them from the sources named in the
+`*_source` keys of `hardware/dimensions.json`, and regenerate the STLs with the
 commands above.
 
 ## Layout
@@ -223,6 +234,7 @@ commands above.
 roomba_oi/protocol.py   opcodes, packet table, encoding, frame checksum
 roomba_oi/driver.py     serial driver: reader thread, stream parser, mode calibration
 roomba_oi/mixer.py      keys -> left/right wheel velocities
+roomba_oi/sim.py        simulated robot for --sim
 server.py               HTTP (8666) + WebSocket (8667) + control loop
 web/index.html          browser controller UI
 drive_tui.py            terminal fallback
